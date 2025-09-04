@@ -529,6 +529,39 @@ export type Database = {
         }
         Relationships: []
       }
+      reservations: {
+        Row: {
+          created_at: string
+          email: string
+          guests: number
+          id: string
+          name: string
+          phone: string
+          reservation_date: string
+          reservation_time: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          guests: number
+          id?: string
+          name: string
+          phone: string
+          reservation_date: string
+          reservation_time: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          guests?: number
+          id?: string
+          name?: string
+          phone?: string
+          reservation_date?: string
+          reservation_time?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -537,6 +570,16 @@ export type Database = {
       binary_quantize: {
         Args: { "": string } | { "": unknown }
         Returns: unknown
+      }
+      get_reservations_status: {
+        Args: { target_date: string }
+        Returns: {
+          capacity: number
+          reservation_date: string
+          reservations_count: number
+          seats_booked: number
+          seats_remaining: number
+        }[]
       }
       halfvec_avg: {
         Args: { "": number[] }

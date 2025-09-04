@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarDays, Clock, Users, Phone, Mail, User } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ReservationData {
   name: string;
@@ -15,9 +16,7 @@ interface ReservationData {
   time: string;
 }
 
-// Simulação de banco de dados em memória para contar reservas
-const reservationsPerDay = new Map<string, number>();
-
+// Integração com Supabase substitui o armazenamento em memória
 const ReservationForm = () => {
   const [formData, setFormData] = useState<ReservationData>({
     name: "",
@@ -29,6 +28,8 @@ const ReservationForm = () => {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [status, setStatus] = useState<{ seatsBooked: number; seatsRemaining: number; capacity: number } | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -38,14 +39,30 @@ const ReservationForm = () => {
     }));
   };
 
-  const getReservationsCount = (date: string): number => {
-    return reservationsPerDay.get(date) || 0;
-  };
-
-  const addReservation = (date: string): void => {
-    const current = reservationsPerDay.get(date) || 0;
-    reservationsPerDay.set(date, current + 1);
-  };
+  useEffect(() => {
+    if (!formData.date) { setStatus(null); return; }
+    const fetchStatus = async () => {
+      setStatusLoading(true);
+      const { data, error } = await supabase.rpc('get_reservations_status', { target_date: formData.date });
+      if (error) {
+        console.error('Erro ao buscar status de reservas', error);
+        setStatus(null);
+      } else {
+        const row = data?.[0];
+        if (row) {
+          setStatus({
+            seatsBooked: row.seats_booked ?? 0,
+            seatsRemaining: row.seats_remaining ?? 110,
+            capacity: row.capacity ?? 110,
+          });
+        } else {
+          setStatus({ seatsBooked: 0, seatsRemaining: 110, capacity: 110 });
+        }
+      }
+      setStatusLoading(false);
+    };
+    fetchStatus();
+  }, [formData.date]);
 
   const validateForm = (): boolean => {
     if (!formData.name.trim()) {
@@ -83,19 +100,6 @@ const ReservationForm = () => {
     setIsSubmitting(true);
 
     try {
-      // Verificar se a data já atingiu o limite
-      const currentCount = getReservationsCount(formData.date);
-      
-      if (currentCount >= 110) {
-        toast({
-          title: "Data indisponível",
-          description: "Este dia já atingiu o limite de 110 reservas. Por favor, escolha outra data.",
-          variant: "destructive"
-        });
-        setIsSubmitting(false);
-        return;
-      }
-
       // Se for mais de 6 pessoas, redirecionar para Instagram
       if (formData.guests > 6) {
         window.open("https://ig.me/m/troiacabofrio?ref=w43934699", "_blank");
@@ -103,16 +107,64 @@ const ReservationForm = () => {
           title: "Reserva para grupo especial",
           description: "Para reservas acima de 6 pessoas, você foi direcionado ao nosso Instagram Direct para atendimento personalizado.",
         });
-        setIsSubmitting(false);
         return;
       }
 
-      // Simular envio da reserva
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Adicionar reserva ao contador
-      addReservation(formData.date);
-      
+      // Verificar capacidade antes de inserir
+      const { data: statusData, error: statusError } = await supabase.rpc('get_reservations_status', { target_date: formData.date });
+      if (statusError) {
+        console.error("Erro ao verificar capacidade", statusError);
+      }
+      const row = statusData?.[0];
+      const seatsRemainingCheck = row?.seats_remaining ?? 110;
+
+      if (seatsRemainingCheck <= 0) {
+        toast({
+          title: "Sem lugares disponíveis",
+          description: "Este dia atingiu a capacidade máxima de 110 lugares. Por favor, escolha outra data.",
+          variant: "destructive"
+        });
+        return;
+      }
+      if (formData.guests > seatsRemainingCheck) {
+        toast({
+          title: "Lugares insuficientes",
+          description: `Restam apenas ${seatsRemainingCheck} lugares nesta data.`,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Inserir reserva no Supabase
+      const { error: insertError } = await supabase
+        .from("reservations")
+        .insert({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          guests: formData.guests,
+          reservation_date: formData.date,
+          reservation_time: formData.time,
+        });
+
+      if (insertError) {
+        const msg = insertError.message || "Erro ao salvar.";
+        if (msg.toLowerCase().includes("capacidade diária") || insertError.code === "23514") {
+          toast({
+            title: "Sem lugares disponíveis",
+            description: "Outro cliente reservou nesse meio tempo e a capacidade foi atingida.",
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "Erro ao enviar reserva",
+            description: "Tente novamente em alguns minutos.",
+            variant: "destructive"
+          });
+        }
+        return;
+      }
+
       toast({
         title: "Reserva enviada com sucesso!",
         description: "Sua reserva foi registrada. Em breve entraremos em contato para confirmar.",
@@ -128,12 +180,6 @@ const ReservationForm = () => {
         time: ""
       });
 
-    } catch (error) {
-      toast({
-        title: "Erro ao enviar reserva",
-        description: "Tente novamente em alguns minutos.",
-        variant: "destructive"
-      });
     } finally {
       setIsSubmitting(false);
     }
@@ -141,7 +187,8 @@ const ReservationForm = () => {
 
   // Calcular data mínima (hoje)
   const today = new Date().toISOString().split('T')[0];
-  const currentReservations = formData.date ? getReservationsCount(formData.date) : 0;
+  const seatsBooked = status?.seatsBooked ?? 0;
+  const seatsRemaining = status?.seatsRemaining ?? 110;
 
   return (
     <Card className="w-full max-w-2xl mx-auto bg-gradient-elegant border-border/50 backdrop-blur-sm shadow-elegant">
@@ -247,9 +294,20 @@ const ReservationForm = () => {
               className="bg-input border-border/30 focus:border-primary/50 transition-colors"
             />
             {formData.date && (
-              <p className="text-sm text-muted-foreground">
-                Reservas para esta data: {currentReservations}/110
-              </p>
+              <>
+                {statusLoading ? (
+                  <p className="text-sm text-muted-foreground">Carregando disponibilidade...</p>
+                ) : status ? (
+                  <p className="text-sm text-muted-foreground">
+                    Lugares reservados: {seatsBooked}/{status.capacity} • Restantes: {seatsRemaining}
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Disponibilidade: 110 lugares</p>
+                )}
+                {status && seatsRemaining === 0 && (
+                  <p className="text-sm text-primary">Não há lugares disponíveis nesta data.</p>
+                )}
+              </>
             )}
           </div>
 
