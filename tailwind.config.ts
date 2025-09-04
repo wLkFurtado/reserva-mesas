@@ -18,6 +18,18 @@ export default {
 			}
 		},
 		extend: {
+			backgroundImage: {
+				'gradient-gold': 'var(--gradient-gold)',
+				'gradient-dark': 'var(--gradient-dark)',
+				'gradient-elegant': 'var(--gradient-elegant)'
+			},
+			boxShadow: {
+				elegant: 'var(--shadow-elegant)',
+				'gold-glow': 'var(--shadow-gold-glow)'
+			},
+			transitionTimingFunction: {
+				elegant: 'var(--transition-elegant)'
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -51,6 +63,16 @@ export default {
 				card: {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
+				},
+				gold: {
+					primary: 'hsl(var(--gold-primary))',
+					secondary: 'hsl(var(--gold-secondary))',
+					muted: 'hsl(var(--gold-muted))'
+				},
+				dark: {
+					primary: 'hsl(var(--dark-primary))',
+					secondary: 'hsl(var(--dark-secondary))',
+					tertiary: 'hsl(var(--dark-tertiary))'
 				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
