@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,25 +14,26 @@ interface ReservationData {
   phone: string;
   guests: number;
   date: string;
-  time: string;
+  periodo: string;
 }
 
 // Integração com Supabase substitui o armazenamento em memória
 const ReservationForm = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState<ReservationData>({
     name: "",
     email: "",
     phone: "",
     guests: 1,
     date: "",
-    time: ""
+    periodo: ""
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusLoading, setStatusLoading] = useState(false);
   const [status, setStatus] = useState<{ seatsBooked: number; seatsRemaining: number; capacity: number } | null>(null);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -81,8 +83,8 @@ const ReservationForm = () => {
       toast({ title: "Data é obrigatória", variant: "destructive" });
       return false;
     }
-    if (!formData.time) {
-      toast({ title: "Horário é obrigatório", variant: "destructive" });
+    if (!formData.periodo) {
+      toast({ title: "Período é obrigatório", variant: "destructive" });
       return false;
     }
     if (formData.guests < 1) {
@@ -143,8 +145,8 @@ const ReservationForm = () => {
           email: formData.email,
           phone: formData.phone,
           guests: formData.guests,
-          reservation_date: formData.date,
-          reservation_time: formData.time,
+          date: formData.date,
+          periodo: formData.periodo,
         });
 
       if (insertError) {
@@ -165,19 +167,19 @@ const ReservationForm = () => {
         return;
       }
 
+      // Redirecionar para página de agradecimento com os dados da reserva
+      const searchParams = new URLSearchParams({
+        name: formData.name,
+        date: formData.date,
+        periodo: formData.periodo,
+        guests: formData.guests.toString()
+      });
+      
+      navigate(`/obrigado?${searchParams.toString()}`);
+      
       toast({
         title: "Reserva enviada com sucesso!",
-        description: "Sua reserva foi registrada. Em breve entraremos em contato para confirmar.",
-      });
-
-      // Limpar formulário
-      setFormData({
-        name: "",
-        email: "",
-        phone: "",
-        guests: 1,
-        date: "",
-        time: ""
+        description: "Redirecionando para confirmação...",
       });
 
     } finally {
@@ -311,22 +313,23 @@ const ReservationForm = () => {
             )}
           </div>
 
-          {/* Horário */}
+          {/* Período */}
           <div className="space-y-2">
-            <Label htmlFor="time" className="flex items-center gap-2 text-foreground">
+            <Label htmlFor="periodo" className="flex items-center gap-2 text-foreground">
               <Clock className="w-4 h-4 text-primary" />
-              Horário
+              Período
             </Label>
-            <Input
-              id="time"
-              name="time"
-              type="time"
-              min="11:00"
-              max="23:00"
-              value={formData.time}
+            <select
+              id="periodo"
+              name="periodo"
+              value={formData.periodo}
               onChange={handleInputChange}
-              className="bg-input border-border/30 focus:border-primary/50 transition-colors"
-            />
+              className="flex h-10 w-full rounded-md border border-border/30 bg-input px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 focus:border-primary/50 transition-colors"
+            >
+              <option value="">Selecione o período</option>
+              <option value="tarde">Tarde</option>
+              <option value="noite">Noite</option>
+            </select>
           </div>
 
           {/* Botão de Envio */}
