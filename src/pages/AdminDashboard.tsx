@@ -426,19 +426,60 @@ const AdminDashboard = () => {
     fetchReservations();
   }, []);
 
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-pulse text-muted-foreground">Carregando...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show auth form if not logged in or not admin
+  if (!user || !session || !isAdmin) {
+    return <AdminAuth />;
+  }
+
+  const handleLogout = async () => {
+    const { error } = await signOut();
+    if (error) {
+      toast({ title: 'Erro ao sair', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Logout realizado com sucesso!' });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 p-4">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-4xl font-bold bg-gradient-gold bg-clip-text text-transparent">
-            Painel Administrativo
-          </h1>
-          <p className="text-muted-foreground">
-            Gerencie todas as reservas do Tróia Restaurante
-          </p>
+        <div className="flex justify-between items-center">
+          <div className="text-center flex-1">
+            <h1 className="text-4xl font-bold bg-gradient-gold bg-clip-text text-transparent">
+              Painel Administrativo
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Gerencie reservas e acompanhe estatísticas
+            </p>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <User className="h-4 w-4" />
+              <span>{user.email}</span>
+            </div>
+            <Button 
+              variant="outline" 
+              onClick={handleLogout}
+              className="flex items-center gap-2 hover:bg-destructive hover:text-destructive-foreground"
+            >
+              <LogOut className="h-4 w-4" />
+              Sair
+            </Button>
+          </div>
         </div>
-
+        
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>

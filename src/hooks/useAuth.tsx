@@ -31,7 +31,7 @@ export const useAuth = () => {
                 .from('profiles')
                 .select('role')
                 .eq('id', session.user.id)
-                .single();
+                .maybeSingle();
               
               setState(prev => ({ 
                 ...prev, 
@@ -54,21 +54,23 @@ export const useAuth = () => {
       
       if (session?.user) {
         // Check if user is admin
-        supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single()
-          .then(({ data: profile }) => {
+        (async () => {
+          try {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', session.user.id)
+              .maybeSingle();
+            
             setState(prev => ({ 
               ...prev, 
               isAdmin: profile?.role === 'admin',
               loading: false 
             }));
-          })
-          .catch(() => {
+          } catch (error) {
             setState(prev => ({ ...prev, isAdmin: false, loading: false }));
-          });
+          }
+        })();
       } else {
         setState(prev => ({ ...prev, loading: false }));
       }
