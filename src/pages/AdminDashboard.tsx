@@ -423,8 +423,10 @@ const AdminDashboard = () => {
   const todayReservations = reservations.filter(r => r.date === toLocalISO(new Date())).length;
 
   useEffect(() => {
-    fetchReservations();
-  }, []);
+    if (user && session && isAdmin) {
+      fetchReservations();
+    }
+  }, [user?.id, session?.access_token, isAdmin]);
 
   // Show loading while checking authentication
   if (authLoading) {
