@@ -536,7 +536,7 @@ const AdminDashboard = () => {
             <div className="bg-muted/30 p-4 rounded-lg border space-y-4">
               {/* Search Bar */}
               <div className="flex-1">
-                <Label htmlFor="search" className="text-sm font-medium">🔍 Buscar Reservas</Label>
+                <Label htmlFor="search" className="text-sm font-medium">Buscar Reservas</Label>
                 <div className="relative mt-1">
                   <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -551,7 +551,7 @@ const AdminDashboard = () => {
 
               {/* Quick Date Filters */}
               <div>
-                <Label className="text-sm font-medium">⚡ Filtros Rápidos</Label>
+                <Label className="text-sm font-medium">Filtros Rápidos</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   <Button 
                     variant="outline" 
@@ -559,7 +559,7 @@ const AdminDashboard = () => {
                     onClick={() => setQuickDateFilter('today')}
                     className="text-xs"
                   >
-                    📅 Hoje
+                    Hoje
                   </Button>
                   <Button 
                     variant="outline" 
@@ -567,7 +567,7 @@ const AdminDashboard = () => {
                     onClick={() => setQuickDateFilter('tomorrow')}
                     className="text-xs"
                   >
-                    📅 Amanhã
+                    Amanhã
                   </Button>
                   <Button 
                     variant="outline" 
@@ -575,7 +575,7 @@ const AdminDashboard = () => {
                     onClick={() => setQuickDateFilter('week')}
                     className="text-xs"
                   >
-                    📅 Todas
+                    Todas
                   </Button>
                   <Button 
                     variant="outline" 
@@ -583,7 +583,7 @@ const AdminDashboard = () => {
                     onClick={() => setQuickDateFilter('thisWeek' as any)}
                     className="text-xs"
                   >
-                    📅 Esta Semana
+                    Esta Semana
                   </Button>
                   <Button 
                     variant="outline" 
@@ -591,7 +591,7 @@ const AdminDashboard = () => {
                     onClick={() => setQuickDateFilter('next7Days' as any)}
                     className="text-xs"
                   >
-                    📅 Próximos 7 dias
+                    Próximos 7 dias
                   </Button>
                 </div>
               </div>
@@ -599,7 +599,7 @@ const AdminDashboard = () => {
               {/* Advanced Filters */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
-                  <Label htmlFor="date-filter" className="text-sm font-medium">📅 Data Específica</Label>
+                  <Label htmlFor="date-filter" className="text-sm font-medium">Data Específica</Label>
                   <Input
                     id="date-filter"
                     type="text"
@@ -612,7 +612,7 @@ const AdminDashboard = () => {
                 </div>
                 
                 <div>
-                  <Label htmlFor="periodo-filter" className="text-sm font-medium">🕐 Período</Label>
+                  <Label htmlFor="periodo-filter" className="text-sm font-medium">Período</Label>
                   <select
                     id="periodo-filter"
                     value={selectedPeriodo}
@@ -627,7 +627,7 @@ const AdminDashboard = () => {
                 </div>
                 
                 <div>
-                  <Label htmlFor="guests-filter" className="text-sm font-medium">👥 Nº de Pessoas</Label>
+                  <Label htmlFor="guests-filter" className="text-sm font-medium">Nº de Pessoas</Label>
                   <select
                     id="guests-filter"
                     value={selectedGuests}
@@ -658,7 +658,7 @@ const AdminDashboard = () => {
                       }}
                       className="flex-1 text-xs"
                     >
-                      🗑️ Limpar
+                      Limpar
                     </Button>
                     <Button 
                       variant="outline" 
@@ -666,7 +666,7 @@ const AdminDashboard = () => {
                       onClick={fetchReservations}
                       className="flex-1 text-xs"
                     >
-                      🔄 Atualizar
+                      Atualizar
                     </Button>
                   </div>
                 </div>
@@ -674,31 +674,31 @@ const AdminDashboard = () => {
 
               {/* Results Counter */}
               <div className="text-sm text-muted-foreground">
-                📊 Mostrando {filteredReservations.length} de {reservations.length} reservas
+                Mostrando {filteredReservations.length} de {reservations.length} reservas
               </div>
               
               {/* Filter Summary */}
               {(searchTerm || selectedDate || selectedPeriodo || selectedGuests) && (
                 <div className="mt-3 flex flex-wrap gap-2 text-sm">
-                  <span className="text-muted-foreground">🏷️ Filtros ativos:</span>
+                  <span className="text-muted-foreground">Filtros ativos:</span>
                   {searchTerm && (
                     <Badge variant="secondary" className="text-xs">
-                      🔍 "{searchTerm}"
+                      Busca: "{searchTerm}"
                     </Badge>
                   )}
                   {selectedDate && (
                     <Badge variant="secondary" className="text-xs">
-                      📅 {formatDateToDisplay(selectedDate)}
+                      Data: {formatDateToDisplay(selectedDate)}
                     </Badge>
                   )}
                   {selectedPeriodo && (
                     <Badge variant="secondary" className="text-xs">
-                      🕐 {selectedPeriodo === 'manha' ? 'Manhã' : selectedPeriodo === 'tarde' ? 'Tarde' : 'Noite'}
+                      Período: {selectedPeriodo === 'manha' ? 'Manhã' : selectedPeriodo === 'tarde' ? 'Tarde' : 'Noite'}
                     </Badge>
                   )}
                   {selectedGuests && (
                     <Badge variant="secondary" className="text-xs">
-                      👥 {selectedGuests === '6' ? '6+ pessoas' : `${selectedGuests} pessoa${selectedGuests !== '1' ? 's' : ''}`}
+                      Pessoas: {selectedGuests === '6' ? '6+ pessoas' : `${selectedGuests} pessoa${selectedGuests !== '1' ? 's' : ''}`}
                     </Badge>
                   )}
                 </div>
@@ -802,7 +802,7 @@ const AdminDashboard = () => {
             ) : filteredReservations.length === 0 ? (
               <div className="text-center py-12">
                 <div className="bg-muted/50 rounded-lg p-8 border-2 border-dashed border-muted-foreground/25">
-                  <div className="text-6xl mb-4">📋</div>
+                  <div className="text-6xl mb-4 text-muted-foreground">📋</div>
                   <h3 className="text-lg font-semibold mb-2">Nenhuma reserva encontrada</h3>
                   <p className="text-muted-foreground mb-4">
                     {reservations.length === 0 
@@ -811,7 +811,7 @@ const AdminDashboard = () => {
                   </p>
                   <div className="flex gap-2 justify-center">
                     <Button onClick={() => setShowCreateForm(true)} className="bg-primary hover:bg-primary/90">
-                      ➕ Nova Reserva
+                      Nova Reserva
                     </Button>
                   </div>
                 </div>
@@ -822,44 +822,38 @@ const AdminDashboard = () => {
                   <Card key={reservation.id} className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-primary/20 hover:border-l-primary">
                     <CardContent className="p-6">
                       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-                        <div className="flex-1 space-y-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                              <span className="text-lg font-bold text-primary">
-                                {reservation.name.charAt(0).toUpperCase()}
-                              </span>
-                            </div>
-                            <div>
-                              <h3 className="font-bold text-xl text-foreground">{reservation.name}</h3>
-                              <div className="flex items-center gap-2 mt-1">
-                                <Badge variant={reservation.periodo === "tarde" ? "default" : "secondary"} className="text-xs">
-                                  {reservation.periodo === "tarde" ? "🌅 Tarde" : "🌙 Noite"}
-                                </Badge>
-                                <Badge variant="outline" className="text-xs">
-                                  👥 {reservation.guests} {reservation.guests === 1 ? "pessoa" : "pessoas"}
-                                </Badge>
-                              </div>
-                            </div>
+                        <div className="flex-1 space-y-4">
+                          {/* Main Info */}
+                          <div>
+                            <h3 className="font-bold text-xl text-foreground">{reservation.name}</h3>
+                            <p className="text-xl italic text-muted-foreground">{reservation.phone}</p>
                           </div>
                           
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
-                            <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-md">
-                              <Mail className="w-4 h-4 text-blue-500" />
+                          {/* Highlighted Reservation Details */}
+                          <div className="flex flex-wrap gap-3 mb-3">
+                            <Badge variant="default" className="px-3 py-1 text-sm font-medium">
+                              <Calendar className="w-4 h-4 mr-2" />
+                              {format(parseLocalDate(reservation.date), "dd/MM/yyyy")}
+                            </Badge>
+                            <Badge variant="secondary" className="px-3 py-1 text-sm font-medium">
+                              <Users className="w-4 h-4 mr-2" />
+                              {reservation.guests} {reservation.guests === 1 ? "pessoa" : "pessoas"}
+                            </Badge>
+                            <Badge variant={reservation.periodo === "tarde" ? "outline" : "secondary"} className="px-3 py-1 text-sm font-medium">
+                              {reservation.periodo === "tarde" ? "Tarde" : "Noite"}
+                            </Badge>
+                          </div>
+                          
+                          {/* Secondary Info */}
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <Mail className="w-4 h-4" />
                               <span className="truncate">{reservation.email}</span>
                             </div>
-                            <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-md">
-                              <Phone className="w-4 h-4 text-green-500" />
-                              <span>{reservation.phone}</span>
-                            </div>
-                            <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-md">
-                              <Calendar className="w-4 h-4 text-purple-500" />
-                              <span className="font-medium">{format(parseLocalDate(reservation.date), "dd/MM/yyyy")}</span>
-                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Criada em: {format(new Date(reservation.created_at), "dd/MM/yyyy 'às' HH:mm")}
+                            </p>
                           </div>
-                          
-                          <p className="text-xs text-muted-foreground border-t pt-2">
-                            📅 Criada em: {format(new Date(reservation.created_at), "dd/MM/yyyy 'às' HH:mm")}
-                          </p>
                         </div>
                         
                         <div className="flex flex-col sm:flex-row gap-2 min-w-fit">
