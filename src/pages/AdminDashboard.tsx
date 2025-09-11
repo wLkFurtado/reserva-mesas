@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, Plus, Search, Trash2, Edit, Phone, Mail } from "lucide-react";
+import { Calendar, Users, Plus, Search, Trash2, Edit, Phone, Mail, LogOut, User } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-
+import { useAuth } from "@/hooks/useAuth";
+import { AdminAuth } from "@/components/AdminAuth";
 import { format } from "date-fns";
 
 interface Reservation {
@@ -22,6 +23,7 @@ interface Reservation {
 }
 
 const AdminDashboard = () => {
+  const { user, session, loading: authLoading, isAdmin, signOut } = useAuth();
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
