@@ -43,6 +43,21 @@ const AdminDashboard = () => {
     periodo: "tarde"
   });
 
+  // Validação do formulário (Admin)
+  const validateFormData = (): boolean => {
+    if (!formData.name.trim()) { toast({ title: "Nome é obrigatório", variant: "destructive" }); return false; }
+    if (!formData.email.trim()) { toast({ title: "Email é obrigatório", variant: "destructive" }); return false; }
+    if (!formData.phone.trim()) { toast({ title: "Telefone é obrigatório", variant: "destructive" }); return false; }
+    if (!formData.date) { toast({ title: "Data é obrigatória", variant: "destructive" }); return false; }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(formData.date)) {
+      toast({ title: "Data inválida", description: "Use o formato dd/mm/aaaa", variant: "destructive" });
+      return false;
+    }
+    if (!formData.periodo) { toast({ title: "Período é obrigatório", variant: "destructive" }); return false; }
+    if (formData.guests < 1) { toast({ title: "Número de pessoas deve ser maior que 0", variant: "destructive" }); return false; }
+    return true;
+  };
+
   // Fetch reservations from Supabase
   const fetchReservations = async () => {
     setLoading(true);
@@ -72,29 +87,47 @@ const AdminDashboard = () => {
 
   // Create new reservation
   const createReservation = async () => {
+    if (!validateFormData()) return;
+
     try {
+      const payload = {
+        name: formData.name.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        guests: Number(formData.guests) || 1,
+        date: formData.date, // deve estar no formato YYYY-MM-DD
+        periodo: formData.periodo,
+      };
+
       const { error } = await supabase
         .from("reservations")
-        .insert([formData]);
+        .insert([payload]);
 
       if (error) {
         console.error("Erro ao criar reserva:", error);
         toast({
-          title: "Erro",
-          description: "Não foi possível criar a reserva.",
+          title: "Erro ao criar reserva",
+          description: error.message || "Não foi possível criar a reserva.",
           variant: "destructive"
         });
-      } else {
-        toast({
-          title: "Sucesso",
-          description: "Reserva criada com sucesso!"
-        });
-        setShowCreateForm(false);
-        resetForm();
-        fetchReservations();
+        return;
       }
+
+      console.log("✅ Reserva criada com sucesso");
+      toast({
+        title: "Sucesso",
+        description: "Reserva criada com sucesso!"
+      });
+      setShowCreateForm(false);
+      resetForm();
+      fetchReservations();
     } catch (error) {
       console.error("Erro inesperado:", error);
+      toast({
+        title: "Erro inesperado",
+        description: "Tente novamente em instantes.",
+        variant: "destructive"
+      });
     }
   };
 
