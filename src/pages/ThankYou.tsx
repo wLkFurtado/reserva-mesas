@@ -24,6 +24,7 @@ const ThankYou = () => {
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "";
+    // garantir parsing em horário local para evitar mudança de dia
     const date = new Date(dateString + "T00:00:00");
     return date.toLocaleDateString("pt-BR", {
       day: "2-digit",

@@ -244,22 +244,25 @@ const AdminDashboard = () => {
     let matchesDate = !selectedDate || selectedDate === '';
     if (selectedDate) {
       if (displayDate === "Próximos 7 dias") {
-        // Filter for next 7 days
-        const today = new Date();
-        const next7Days = new Date(today);
-        next7Days.setDate(today.getDate() + 7);
-        const reservationDate = new Date(reservation.date);
-        matchesDate = reservationDate >= today && reservationDate <= next7Days;
+        // Próximos 7 dias a partir de hoje (meia-noite local)
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const end = new Date(todayStart);
+        end.setDate(todayStart.getDate() + 7);
+        const reservationDate = parseLocalDate(reservation.date);
+        matchesDate = reservationDate >= todayStart && reservationDate <= end;
       } else if (displayDate.startsWith("Semana atual")) {
-        // Filter for current week
-        const today = new Date();
-        const startOfWeek = new Date(today);
+        // Semana atual (Segunda a Domingo) em horário local
+        const todayLocal = new Date();
+        const startOfWeek = new Date(todayLocal);
         const day = startOfWeek.getDay();
         const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
         startOfWeek.setDate(diff);
+        startOfWeek.setHours(0, 0, 0, 0);
         const endOfWeek = new Date(startOfWeek);
         endOfWeek.setDate(startOfWeek.getDate() + 6);
-        const reservationDate = new Date(reservation.date);
+        endOfWeek.setHours(23, 59, 59, 999);
+        const reservationDate = parseLocalDate(reservation.date);
         matchesDate = reservationDate >= startOfWeek && reservationDate <= endOfWeek;
       } else {
         matchesDate = reservation.date === selectedDate;
@@ -312,6 +315,17 @@ const AdminDashboard = () => {
     
     return `${yearNum}-${formattedMonth}-${formattedDay}`;
   };
+
+  // Helpers para evitar mudança de dia por fuso (sempre horário local)
+  const toLocalISO = (date: Date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
+  const parseLocalDate = (isoDate: string) => new Date(`${isoDate}T00:00:00`);
+
 
   const handleDateChange = (value: string) => {
     // Remove caracteres não numéricos exceto /
@@ -366,44 +380,52 @@ const AdminDashboard = () => {
     tomorrow.setDate(tomorrow.getDate() + 1);
     
     switch (type) {
-      case 'today':
-        const todayISO = today.toISOString().split('T')[0];
+      case 'today': {
+        const todayISO = toLocalISO(new Date());
         setSelectedDate(todayISO);
         setDisplayDate(formatDateToDisplay(todayISO));
         break;
-      case 'tomorrow':
-        const tomorrowISO = tomorrow.toISOString().split('T')[0];
+      }
+      case 'tomorrow': {
+        const t = new Date();
+        t.setDate(t.getDate() + 1);
+        const tomorrowISO = toLocalISO(t);
         setSelectedDate(tomorrowISO);
         setDisplayDate(formatDateToDisplay(tomorrowISO));
         break;
-      case 'thisWeek':
-        // Show reservations for the current week (Monday to Sunday)
-        const startOfWeek = new Date(today);
+      }
+      case 'thisWeek': {
+        // Show reservations for the current week (Monday to Sunday) em horário local
+        const todayLocal = new Date();
+        const startOfWeek = new Date(todayLocal);
         const day = startOfWeek.getDay();
         const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Sunday
         startOfWeek.setDate(diff);
-        const startOfWeekISO = startOfWeek.toISOString().split('T')[0];
+        const startOfWeekISO = toLocalISO(startOfWeek);
         setSelectedDate(startOfWeekISO);
         setDisplayDate(`Semana atual (${formatDateToDisplay(startOfWeekISO)})`);
         break;
-      case 'next7Days':
-        // Show reservations for the next 7 days starting from today
-        const next7DaysISO = today.toISOString().split('T')[0];
+      }
+      case 'next7Days': {
+        // Show reservations for the next 7 days starting from today (local)
+        const next7DaysISO = toLocalISO(new Date());
         setSelectedDate(next7DaysISO);
         setDisplayDate("Próximos 7 dias");
         break;
-      case 'week':
+      }
+      case 'week': {
         // For week, we'll clear the date filter and let user see all
         setSelectedDate("");
         setDisplayDate("");
         break;
+      }
     }
   };
 
   // Calculate statistics
   const totalReservations = reservations.length;
   const totalGuests = reservations.reduce((sum, r) => sum + r.guests, 0);
-  const todayReservations = reservations.filter(r => r.date === new Date().toISOString().split('T')[0]).length;
+  const todayReservations = reservations.filter(r => r.date === toLocalISO(new Date())).length;
 
   useEffect(() => {
     fetchReservations();
@@ -814,7 +836,7 @@ const AdminDashboard = () => {
                             </div>
                             <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-md">
                               <Calendar className="w-4 h-4 text-purple-500" />
-                              <span className="font-medium">{format(new Date(reservation.date), "dd/MM/yyyy")}</span>
+                              <span className="font-medium">{format(parseLocalDate(reservation.date), "dd/MM/yyyy")}</span>
                             </div>
                           </div>
                           
