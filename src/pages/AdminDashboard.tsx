@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, Users, Plus, Search, Trash2, Edit, Phone, Mail } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { insertTestData, clearTestData } from "@/utils/test-data";
+
 import { format } from "date-fns";
 
 interface Reservation {
@@ -129,46 +129,6 @@ const AdminDashboard = () => {
     }
   };
 
-  // Create test data
-  const createTestData = async () => {
-    const result = await insertTestData();
-    
-    if (result.success) {
-      toast({
-        title: "Sucesso",
-        description: "Dados de teste criados com sucesso!"
-      });
-      // Recarregar as reservas
-      fetchReservations();
-    } else {
-      console.log('❌ Erro ao criar dados de teste:', result.error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível criar os dados de teste.",
-        variant: "destructive"
-      });
-    }
-  };
-  
-  const clearTestDataHandler = async () => {
-    const result = await clearTestData();
-    
-    if (result.success) {
-      toast({
-        title: "Sucesso",
-        description: "Dados de teste removidos com sucesso!"
-      });
-      // Recarregar as reservas
-      fetchReservations();
-    } else {
-      console.log('❌ Erro ao remover dados de teste:', result.error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível remover os dados de teste.",
-        variant: "destructive"
-      });
-    }
-  };
 
   // Delete reservation
   const deleteReservation = async (id: string) => {
@@ -483,22 +443,6 @@ const AdminDashboard = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <CardTitle>Reservas</CardTitle>
               <div className="flex gap-2">
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={createTestData}
-                    variant="outline"
-                    className="text-sm"
-                  >
-                    Criar Dados de Teste
-                  </Button>
-                  <Button 
-                    onClick={clearTestDataHandler}
-                    variant="outline"
-                    className="text-sm border-red-600 text-red-600 hover:bg-red-50"
-                  >
-                    Limpar Dados de Teste
-                  </Button>
-                </div>
                 <Button 
                   onClick={() => setShowCreateForm(true)}
                   className="bg-primary hover:bg-primary/90"
@@ -788,11 +732,6 @@ const AdminDashboard = () => {
                       : "Nenhuma reserva corresponde aos filtros aplicados."}
                   </p>
                   <div className="flex gap-2 justify-center">
-                    {reservations.length === 0 && (
-                      <Button onClick={createTestData} variant="outline">
-                        🎯 Criar Dados de Teste
-                      </Button>
-                    )}
                     <Button onClick={() => setShowCreateForm(true)} className="bg-primary hover:bg-primary/90">
                       ➕ Nova Reserva
                     </Button>
