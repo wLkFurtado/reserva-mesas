@@ -241,8 +241,30 @@ const AdminDashboard = () => {
       reservation.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       reservation.phone.includes(searchTerm);
     
-    const matchesDate = !selectedDate || selectedDate === '' || 
-      reservation.date === selectedDate;
+    let matchesDate = !selectedDate || selectedDate === '';
+    if (selectedDate) {
+      if (displayDate === "Próximos 7 dias") {
+        // Filter for next 7 days
+        const today = new Date();
+        const next7Days = new Date(today);
+        next7Days.setDate(today.getDate() + 7);
+        const reservationDate = new Date(reservation.date);
+        matchesDate = reservationDate >= today && reservationDate <= next7Days;
+      } else if (displayDate.startsWith("Semana atual")) {
+        // Filter for current week
+        const today = new Date();
+        const startOfWeek = new Date(today);
+        const day = startOfWeek.getDay();
+        const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
+        startOfWeek.setDate(diff);
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        const reservationDate = new Date(reservation.date);
+        matchesDate = reservationDate >= startOfWeek && reservationDate <= endOfWeek;
+      } else {
+        matchesDate = reservation.date === selectedDate;
+      }
+    }
     
     const matchesPeriodo = !selectedPeriodo || selectedPeriodo === '' || 
       reservation.periodo === selectedPeriodo;
@@ -338,7 +360,7 @@ const AdminDashboard = () => {
   };
 
   // Quick date filter functions
-  const setQuickDateFilter = (type: 'today' | 'tomorrow' | 'week') => {
+  const setQuickDateFilter = (type: 'today' | 'tomorrow' | 'week' | 'thisWeek' | 'next7Days') => {
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -353,6 +375,22 @@ const AdminDashboard = () => {
         const tomorrowISO = tomorrow.toISOString().split('T')[0];
         setSelectedDate(tomorrowISO);
         setDisplayDate(formatDateToDisplay(tomorrowISO));
+        break;
+      case 'thisWeek':
+        // Show reservations for the current week (Monday to Sunday)
+        const startOfWeek = new Date(today);
+        const day = startOfWeek.getDay();
+        const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Sunday
+        startOfWeek.setDate(diff);
+        const startOfWeekISO = startOfWeek.toISOString().split('T')[0];
+        setSelectedDate(startOfWeekISO);
+        setDisplayDate(`Semana atual (${formatDateToDisplay(startOfWeekISO)})`);
+        break;
+      case 'next7Days':
+        // Show reservations for the next 7 days starting from today
+        const next7DaysISO = today.toISOString().split('T')[0];
+        setSelectedDate(next7DaysISO);
+        setDisplayDate("Próximos 7 dias");
         break;
       case 'week':
         // For week, we'll clear the date filter and let user see all
@@ -495,6 +533,22 @@ const AdminDashboard = () => {
                   >
                     📅 Todas
                   </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setQuickDateFilter('thisWeek' as any)}
+                    className="text-xs"
+                  >
+                    📅 Esta Semana
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setQuickDateFilter('next7Days' as any)}
+                    className="text-xs"
+                  >
+                    📅 Próximos 7 dias
+                  </Button>
                 </div>
               </div>
 
@@ -554,6 +608,7 @@ const AdminDashboard = () => {
                       onClick={() => {
                         setSearchTerm("");
                         setSelectedDate("");
+                        setDisplayDate("");
                         setSelectedPeriodo("");
                         setSelectedGuests("");
                       }}
