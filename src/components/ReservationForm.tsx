@@ -299,11 +299,14 @@ const ReservationForm = () => {
                 <SelectValue placeholder="Selecione o número de pessoas" />
               </SelectTrigger>
               <SelectContent>
-                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                {Array.from({ length: 20 }, (_, i) => i + 1).map((num) => (
                   <SelectItem key={num} value={num.toString()}>
                     {num} {num === 1 ? 'pessoa' : 'pessoas'}
                   </SelectItem>
                 ))}
+                <SelectItem value="25">
+                  Mais de 20 pessoas
+                </SelectItem>
               </SelectContent>
             </Select>
             {formData.guests > 6 && (
