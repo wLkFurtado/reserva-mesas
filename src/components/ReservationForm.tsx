@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CalendarDays, Clock, Users, Phone, Mail, User } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -47,6 +48,13 @@ const ReservationForm = () => {
     setFormData(prev => ({
       ...prev,
       [name]: name === "guests" ? parseInt(value) || 1 : value
+    }));
+  };
+
+  const handleGuestsChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      guests: parseInt(value)
     }));
   };
 
@@ -286,16 +294,18 @@ const ReservationForm = () => {
               <Users className="w-4 h-4 text-primary" />
               Número de Pessoas
             </Label>
-            <Input
-              id="guests"
-              name="guests"
-              type="number"
-              min="1"
-              max="20"
-              value={formData.guests}
-              onChange={handleInputChange}
-              className="bg-input border-border/30 focus:border-primary/50 transition-colors"
-            />
+            <Select value={formData.guests.toString()} onValueChange={handleGuestsChange}>
+              <SelectTrigger className="bg-input border-border/30 focus:border-primary/50 transition-colors">
+                <SelectValue placeholder="Selecione o número de pessoas" />
+              </SelectTrigger>
+              <SelectContent>
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => (
+                  <SelectItem key={num} value={num.toString()}>
+                    {num} {num === 1 ? 'pessoa' : 'pessoas'}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             {formData.guests > 6 && (
               <p className="text-sm text-primary">
                 ⚠️ Para grupos acima de 6 pessoas, você será direcionado ao nosso Instagram para atendimento personalizado.
