@@ -363,8 +363,8 @@ const ReservationForm = () => {
               className="flex h-10 w-full rounded-md border border-border/30 bg-input px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 focus:border-primary/50 transition-colors"
             >
               <option value="">Selecione o período</option>
-              <option value="tarde">Tarde</option>
-              <option value="noite">Noite</option>
+              <option value="tarde">Tarde - 13:00</option>
+              <option value="noite">Noite - 19:00</option>
             </select>
           </div>
 
