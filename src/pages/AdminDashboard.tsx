@@ -316,14 +316,14 @@ const AdminDashboard = () => {
   };
 
   // Helpers para evitar mudança de dia por fuso (sempre horário local)
+  const parseLocalDate = (isoDate: string) => new Date(`${isoDate}T00:00:00`);
+  
   const toLocalISO = (date: Date) => {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
     const d = String(date.getDate()).padStart(2, '0');
     return `${y}-${m}-${d}`;
   };
-
-  const parseLocalDate = (isoDate: string) => new Date(`${isoDate}T00:00:00`);
 
 
   const handleDateChange = (value: string) => {
