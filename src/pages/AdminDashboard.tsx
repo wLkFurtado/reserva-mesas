@@ -4,12 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Users, Plus, Search, Trash2, Edit, Phone, Mail, LogOut, User } from "lucide-react";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar, Users, Plus, Search, Trash2, Edit, Phone, Mail, LogOut, User, CalendarIcon } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AdminAuth } from "@/components/AdminAuth";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface Reservation {
   id: string;
@@ -27,6 +30,7 @@ const AdminDashboard = () => {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedDateFilter, setSelectedDateFilter] = useState<Date | undefined>(undefined);
   const [selectedDate, setSelectedDate] = useState("");
   const [displayDate, setDisplayDate] = useState("");
   const [formDisplayDate, setFormDisplayDate] = useState("");
@@ -379,6 +383,7 @@ const AdminDashboard = () => {
         const todayISO = toLocalISO(new Date());
         setSelectedDate(todayISO);
         setDisplayDate(formatDateToDisplay(todayISO));
+        setSelectedDateFilter(new Date());
         break;
       }
       case 'tomorrow': {
@@ -387,6 +392,7 @@ const AdminDashboard = () => {
         const tomorrowISO = toLocalISO(t);
         setSelectedDate(tomorrowISO);
         setDisplayDate(formatDateToDisplay(tomorrowISO));
+        setSelectedDateFilter(t);
         break;
       }
       case 'thisWeek': {
@@ -399,6 +405,7 @@ const AdminDashboard = () => {
         const startOfWeekISO = toLocalISO(startOfWeek);
         setSelectedDate(startOfWeekISO);
         setDisplayDate(`Semana atual (${formatDateToDisplay(startOfWeekISO)})`);
+        setSelectedDateFilter(undefined); // Week view doesn't select specific date
         break;
       }
       case 'next7Days': {
@@ -406,12 +413,14 @@ const AdminDashboard = () => {
         const next7DaysISO = toLocalISO(new Date());
         setSelectedDate(next7DaysISO);
         setDisplayDate("Próximos 7 dias");
+        setSelectedDateFilter(undefined); // Range view doesn't select specific date
         break;
       }
       case 'week': {
         // For week, we'll clear the date filter and let user see all
         setSelectedDate("");
         setDisplayDate("");
+        setSelectedDateFilter(undefined);
         break;
       }
     }
@@ -599,16 +608,56 @@ const AdminDashboard = () => {
               {/* Advanced Filters */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <div>
-                  <Label htmlFor="date-filter" className="text-sm font-medium">Data Específica</Label>
-                  <Input
-                    id="date-filter"
-                    type="text"
-                    placeholder="dd/mm/yyyy"
-                    value={displayDate}
-                    onChange={(e) => handleDateChange(e.target.value)}
-                    className="mt-1"
-                    maxLength={10}
-                  />
+                  <Label className="text-sm font-medium">Data Específica</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal mt-1",
+                          !selectedDateFilter && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {selectedDateFilter ? format(selectedDateFilter, "dd/MM/yyyy") : "Selecionar data"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={selectedDateFilter}
+                        onSelect={(date) => {
+                          setSelectedDateFilter(date);
+                          if (date) {
+                            const isoDate = toLocalISO(date);
+                            setSelectedDate(isoDate);
+                            setDisplayDate(formatDateToDisplay(isoDate));
+                          } else {
+                            setSelectedDate("");
+                            setDisplayDate("");
+                          }
+                        }}
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                      {selectedDateFilter && (
+                        <div className="p-3 border-t">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => {
+                              setSelectedDateFilter(undefined);
+                              setSelectedDate("");
+                              setDisplayDate("");
+                            }}
+                            className="w-full"
+                          >
+                            Limpar seleção
+                          </Button>
+                        </div>
+                      )}
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 
                 <div>
