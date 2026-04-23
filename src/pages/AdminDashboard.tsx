@@ -31,8 +31,6 @@ import { reservationAdminSchema } from "@/lib/validation";
 
 const AdminDashboard = () => {
   const { user, session, loading: authLoading, isAdmin, signOut } = useAuth();
-  const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDateFilter, setSelectedDateFilter] = useState<Date | undefined>(undefined);
   const [selectedDate, setSelectedDate] = useState("");
@@ -53,136 +51,79 @@ const AdminDashboard = () => {
     periodo: "tarde",
   });
 
-  // Validação do formulário (Admin)
+  const isAuthed = Boolean(user && session && isAdmin);
+  const {
+    data: reservations = [],
+    isLoading: loading,
+    refetch,
+  } = useReservations(isAuthed);
+  const createMutation = useCreateReservation();
+  const updateMutation = useUpdateReservation();
+  const deleteMutation = useDeleteReservation();
+
+  // Validação via Zod
   const validateFormData = (): boolean => {
-    if (!formData.name.trim()) { toast({ title: "Nome é obrigatório", variant: "destructive" }); return false; }
-    if (!formData.email.trim()) { toast({ title: "Email é obrigatório", variant: "destructive" }); return false; }
-    if (!formData.phone.trim()) { toast({ title: "Telefone é obrigatório", variant: "destructive" }); return false; }
-    if (!formData.date) { toast({ title: "Data é obrigatória", variant: "destructive" }); return false; }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(formData.date)) {
-      toast({ title: "Data inválida", variant: "destructive" });
+    const result = reservationAdminSchema.safeParse(formData);
+    if (!result.success) {
+      const first = result.error.issues[0];
+      toast({ title: first?.message ?? "Dados inválidos", variant: "destructive" });
       return false;
     }
-    if (!formData.periodo) { toast({ title: "Período é obrigatório", variant: "destructive" }); return false; }
-    if (formData.guests < 1) { toast({ title: "Número de pessoas deve ser maior que 0", variant: "destructive" }); return false; }
     return true;
   };
 
-  // Fetch reservations from Supabase
-  const fetchReservations = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("reservations")
-        .select("*")
-        .order("date", { ascending: false })
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error("Erro ao buscar reservas:", error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível carregar as reservas.",
-          variant: "destructive",
-        });
-      } else {
-        setReservations(data || []);
-      }
-    } catch (error) {
-      console.error("Erro inesperado:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Create new reservation
   const createReservation = async () => {
     if (!validateFormData()) return;
-
     try {
-      const payload = {
+      await createMutation.mutateAsync({
         name: formData.name.trim(),
         email: formData.email.trim(),
         phone: formData.phone.trim(),
         guests: Number(formData.guests) || 1,
         date: formData.date,
         periodo: formData.periodo,
-      };
-
-      const { error } = await supabase.from("reservations").insert([payload]);
-
-      if (error) {
-        console.error("Erro ao criar reserva:", error);
-        toast({
-          title: "Erro ao criar reserva",
-          description: error.message || "Não foi possível criar a reserva.",
-          variant: "destructive",
-        });
-        return;
-      }
-
+      });
       toast({ title: "Sucesso", description: "Reserva criada com sucesso!" });
       setShowCreateForm(false);
       resetForm();
-      fetchReservations();
-    } catch (error) {
-      console.error("Erro inesperado:", error);
+    } catch (error: any) {
       toast({
-        title: "Erro inesperado",
-        description: "Tente novamente em instantes.",
+        title: "Erro ao criar reserva",
+        description: error?.message || "Não foi possível criar a reserva.",
         variant: "destructive",
       });
     }
   };
 
-  // Update reservation
   const updateReservation = async () => {
     if (!editingReservation) return;
-
+    if (!validateFormData()) return;
     try {
-      const { error } = await supabase
-        .from("reservations")
-        .update(formData)
-        .eq("id", editingReservation.id);
-
-      if (error) {
-        console.error("Erro ao atualizar reserva:", error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível atualizar a reserva.",
-          variant: "destructive",
-        });
-      } else {
-        toast({ title: "Sucesso", description: "Reserva atualizada com sucesso!" });
-        setEditingReservation(null);
-        resetForm();
-        fetchReservations();
-      }
-    } catch (error) {
-      console.error("Erro inesperado:", error);
+      await updateMutation.mutateAsync({ id: editingReservation.id, values: formData });
+      toast({ title: "Sucesso", description: "Reserva atualizada com sucesso!" });
+      setEditingReservation(null);
+      resetForm();
+      setShowCreateForm(false);
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error?.message || "Não foi possível atualizar a reserva.",
+        variant: "destructive",
+      });
     }
   };
 
-  // Delete reservation
   const deleteReservation = async (id: string) => {
     if (!confirm("Tem certeza que deseja excluir esta reserva?")) return;
-
     try {
-      const { error } = await supabase.from("reservations").delete().eq("id", id);
-
-      if (error) {
-        console.error("Erro ao excluir reserva:", error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível excluir a reserva.",
-          variant: "destructive",
-        });
-      } else {
-        toast({ title: "Sucesso", description: "Reserva excluída com sucesso!" });
-        fetchReservations();
-      }
-    } catch (error) {
-      console.error("Erro inesperado:", error);
+      await deleteMutation.mutateAsync(id);
+      toast({ title: "Sucesso", description: "Reserva excluída com sucesso!" });
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error?.message || "Não foi possível excluir a reserva.",
+        variant: "destructive",
+      });
     }
   };
 
