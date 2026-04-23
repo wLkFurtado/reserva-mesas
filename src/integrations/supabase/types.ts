@@ -211,6 +211,42 @@ export type Database = {
         }
         Relationships: []
       }
+      reservations: {
+        Row: {
+          created_at: string
+          date: string
+          email: string
+          guests: number
+          id: string
+          name: string
+          periodo: string
+          phone: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          email: string
+          guests: number
+          id?: string
+          name: string
+          periodo: string
+          phone: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          email?: string
+          guests?: number
+          id?: string
+          name?: string
+          periodo?: string
+          phone?: string
+          status?: string
+        }
+        Relationships: []
+      }
       troia_reservas: {
         Row: {
           criado_em: string | null
@@ -241,6 +277,27 @@ export type Database = {
           session_id?: string | null
           telefone?: string | null
           tipo_reserva?: string | null
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
         }
         Relationships: []
       }
@@ -306,10 +363,28 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_reservations_status_by_period: {
+        Args: { target_date: string }
+        Returns: {
+          capacity: number
+          seats_booked_noite: number
+          seats_booked_tarde: number
+          seats_booked_total: number
+          seats_remaining_noite: number
+          seats_remaining_tarde: number
+          seats_remaining_total: number
+        }[]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -436,6 +511,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const
