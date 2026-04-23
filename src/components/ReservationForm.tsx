@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CalendarDays, Clock, Users, Phone, Mail, User } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { maskPhone } from "@/lib/phone-mask";
 
 interface ReservationData {
   name: string;
@@ -47,7 +48,12 @@ const ReservationForm = () => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === "guests" ? parseInt(value) || 1 : value
+      [name]:
+        name === "guests"
+          ? parseInt(value) || 1
+          : name === "phone"
+          ? maskPhone(value)
+          : value,
     }));
   };
 
