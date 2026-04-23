@@ -136,6 +136,7 @@ const AdminDashboard = () => {
         guests: Number(formData.guests) || 1,
         date: formData.date,
         periodo: formData.periodo,
+        status: formData.status,
       });
       toast({ title: "Sucesso", description: "Reserva criada com sucesso!" });
       setShowCreateForm(false);
@@ -183,7 +184,7 @@ const AdminDashboard = () => {
 
   // Reset form
   const resetForm = () => {
-    setFormData({ name: "", email: "", phone: "", guests: 1, date: "", periodo: "tarde" });
+    setFormData({ name: "", email: "", phone: "", guests: 1, date: "", periodo: "tarde", status: "pending" });
     setFormDateObj(undefined);
   };
 
@@ -197,9 +198,42 @@ const AdminDashboard = () => {
       guests: reservation.guests,
       date: reservation.date,
       periodo: reservation.periodo,
+      status: (reservation.status ?? "pending") as ReservationStatus,
     });
     setFormDateObj(parseLocalDate(reservation.date));
     setShowCreateForm(true);
+  };
+
+  // Quick status update (inline)
+  const updateStatus = async (id: string, status: ReservationStatus) => {
+    try {
+      await updateMutation.mutateAsync({ id, values: { status } });
+      toast({ title: "Status atualizado", description: statusMeta[status].label });
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error?.message || "Não foi possível atualizar o status.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Sort handler
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir(sortDir === "asc" ? "desc" : "asc");
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+    setPage(1);
+  };
+
+  const SortIcon = ({ k }: { k: SortKey }) => {
+    if (sortKey !== k) return <ArrowUpDown className="ml-1 h-3 w-3 opacity-50" />;
+    return sortDir === "asc"
+      ? <ArrowUp className="ml-1 h-3 w-3" />
+      : <ArrowDown className="ml-1 h-3 w-3" />;
   };
 
   // Cancel editing
