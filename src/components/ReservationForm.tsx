@@ -92,7 +92,7 @@ const ReservationForm = () => {
 
       const { error: insertError } = await supabase
         .from("reservations")
-        .insert([values]);
+        .insert([values as Required<ReservationFormValues>]);
 
       if (insertError) {
         const msg = insertError.message || "Erro ao salvar.";
