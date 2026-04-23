@@ -128,7 +128,10 @@ const AdminDashboard = () => {
       <div className="max-w-7xl mx-auto space-y-6">
         <AdminHeader email={user.email ?? ""} onLogout={handleLogout} />
 
-        <AdminStatsCards reservations={reservations} />
+        <AdminStatsCards 
+          reservations={reservations} 
+          selectedDate={filters.state.dateMode === "exact" && filters.state.date ? filters.state.date : undefined}
+        />
 
         <Card>
           <CardHeader>

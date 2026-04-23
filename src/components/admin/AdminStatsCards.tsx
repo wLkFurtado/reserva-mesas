@@ -9,30 +9,34 @@ const DAILY_CAPACITY = 110;
 
 interface Props {
   reservations: Reservation[];
+  selectedDate?: string;
 }
 
-export const AdminStatsCards = ({ reservations }: Props) => {
+export const AdminStatsCards = ({ reservations, selectedDate }: Props) => {
   const stats = useMemo(() => {
-    const todayISO = todayLocalISO();
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const in7 = new Date(today);
-    in7.setDate(today.getDate() + 7);
+    const targetDateISO = selectedDate || todayLocalISO();
+    const isToday = targetDateISO === todayLocalISO();
+    const targetDateObj = parseLocalDate(targetDateISO);
+    targetDateObj.setHours(0, 0, 0, 0);
+    
+    const in7 = new Date(targetDateObj);
+    in7.setDate(targetDateObj.getDate() + 7);
 
-    const todays = reservations.filter((r) => r.date === todayISO && r.status !== "cancelled");
+    const todays = reservations.filter((r) => r.date === targetDateISO && r.status !== "cancelled");
     const next7 = reservations.filter((r) => {
       if (r.status === "cancelled") return false;
       const d = parseLocalDate(r.date);
-      return d >= today && d <= in7;
+      return d >= targetDateObj && d <= in7;
     });
     const pending = reservations.filter((r) => (r.status ?? "pending") === "pending");
 
     const todayGuests = todays.reduce((s, r) => s + r.guests, 0);
     const todayPeople = reservations
-      .filter((r) => r.date === todayISO && r.status !== "cancelled")
+      .filter((r) => r.date === targetDateISO && r.status !== "cancelled")
       .reduce((s, r) => s + r.guests, 0);
 
     return {
+      isToday,
       todayCount: todays.length,
       todayPeople,
       occupancy: Math.min(100, Math.round((todayGuests / DAILY_CAPACITY) * 100)),
@@ -41,7 +45,7 @@ export const AdminStatsCards = ({ reservations }: Props) => {
       pendingCount: pending.length,
       estimatedRevenue: todayPeople * 80,
     };
-  }, [reservations]);
+  }, [reservations, selectedDate]);
 
   const occupancyTone =
     stats.occupancy >= 85
@@ -50,13 +54,15 @@ export const AdminStatsCards = ({ reservations }: Props) => {
       ? "text-accent"
       : "text-primary";
 
+  const dayLabel = stats.isToday ? "hoje" : "na data";
+
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-      <StatCard icon={Calendar} label="Reservas hoje" value={stats.todayCount} />
-      <StatCard icon={Users} label="Pessoas hoje" value={stats.todayPeople} />
+      <StatCard icon={Calendar} label={`Reservas ${dayLabel}`} value={stats.todayCount} />
+      <StatCard icon={Users} label={`Pessoas ${dayLabel}`} value={stats.todayPeople} />
       <Card className="col-span-2 md:col-span-1">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-xs font-medium text-muted-foreground">Ocupação hoje</CardTitle>
+          <CardTitle className="text-xs font-medium text-muted-foreground">Ocupação {dayLabel}</CardTitle>
           <Gauge className={`h-4 w-4 ${occupancyTone}`} />
         </CardHeader>
         <CardContent className="space-y-2">
