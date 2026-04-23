@@ -262,20 +262,37 @@ const ReservationForm = () => {
               <p className="text-sm text-destructive">{errors.date.message}</p>
             )}
             {date && (
-              <div className="space-y-1">
+              <div className="space-y-2">
                 {statusLoading ? (
-                  <Skeleton className="h-4 w-56" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Skeleton className="h-14 w-full" />
+                    <Skeleton className="h-14 w-full" />
+                  </div>
                 ) : status ? (
-                  <p className="text-sm text-muted-foreground">
-                    Lugares reservados: {seatsBooked}/{status.capacity} • Restantes:{" "}
-                    <span className={dayFull ? "text-destructive font-medium" : ""}>
-                      {seatsRemaining}
-                    </span>
-                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className={`rounded-md border p-2 text-xs ${tardeFull ? "border-destructive/50 bg-destructive/5" : "border-border/30 bg-muted/20"}`}>
+                      <div className="font-medium text-foreground">Tarde — 13:00</div>
+                      <div className="text-muted-foreground">
+                        {tardeFull ? (
+                          <span className="text-destructive font-medium">Lotado</span>
+                        ) : (
+                          <>Restam <span className="text-foreground font-medium">{tardeRemaining}</span> lugares</>
+                        )}
+                      </div>
+                    </div>
+                    <div className={`rounded-md border p-2 text-xs ${noiteFull ? "border-destructive/50 bg-destructive/5" : "border-border/30 bg-muted/20"}`}>
+                      <div className="font-medium text-foreground">Noite — 19:00</div>
+                      <div className="text-muted-foreground">
+                        {noiteFull ? (
+                          <span className="text-destructive font-medium">Lotado</span>
+                        ) : (
+                          <>Restam <span className="text-foreground font-medium">{noiteRemaining}</span> lugares</>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Disponibilidade: 110 lugares
-                  </p>
+                  <p className="text-sm text-muted-foreground">Disponibilidade: 110 lugares</p>
                 )}
                 {dayFull && (
                   <p className="text-sm text-primary">
@@ -303,8 +320,12 @@ const ReservationForm = () => {
               className="flex h-10 w-full rounded-md border border-border/30 bg-input px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 focus:border-primary/50 transition-colors"
             >
               <option value="">Selecione o período</option>
-              <option value="tarde">Tarde - 13:00</option>
-              <option value="noite">Noite - 19:00</option>
+              <option value="tarde" disabled={tardeFull}>
+                Tarde - 13:00 {tardeFull ? "(Lotado)" : ""}
+              </option>
+              <option value="noite" disabled={noiteFull}>
+                Noite - 19:00 {noiteFull ? "(Lotado)" : ""}
+              </option>
             </select>
             {errors.periodo && (
               <p className="text-sm text-destructive">{errors.periodo.message}</p>
