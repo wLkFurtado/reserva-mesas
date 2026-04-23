@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,10 +6,41 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar, Users, Plus, Search, Trash2, Edit, Phone, Mail, LogOut, User, CalendarIcon } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Calendar,
+  Users,
+  Plus,
+  Search,
+  Trash2,
+  Edit,
+  LogOut,
+  User,
+  CalendarIcon,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { AdminAuth } from "@/components/AdminAuth";
+import { ExportCsvButton } from "@/components/admin/ExportCsvButton";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
@@ -25,9 +56,19 @@ import {
   useUpdateReservation,
   useDeleteReservation,
   type Reservation,
+  type ReservationStatus,
 } from "@/hooks/useReservations";
 import { reservationAdminSchema } from "@/lib/validation";
 
+type SortKey = "date" | "name" | "guests" | "periodo" | "status" | "created_at";
+type SortDir = "asc" | "desc";
+const PAGE_SIZE = 10;
+
+const statusMeta: Record<ReservationStatus, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
+  pending: { label: "Pendente", variant: "secondary" },
+  confirmed: { label: "Confirmada", variant: "default" },
+  cancelled: { label: "Cancelada", variant: "destructive" },
+};
 
 const AdminDashboard = () => {
   const { user, session, loading: authLoading, isAdmin, signOut } = useAuth();
@@ -37,18 +78,31 @@ const AdminDashboard = () => {
   const [displayDate, setDisplayDate] = useState("");
   const [selectedPeriodo, setSelectedPeriodo] = useState("");
   const [selectedGuests, setSelectedGuests] = useState("");
+  const [selectedStatus, setSelectedStatus] = useState<string>("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingReservation, setEditingReservation] = useState<Reservation | null>(null);
   const [formDateObj, setFormDateObj] = useState<Date | undefined>(undefined);
+  const [sortKey, setSortKey] = useState<SortKey>("date");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [page, setPage] = useState(1);
 
   // Form data for creating/editing reservations
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    name: string;
+    email: string;
+    phone: string;
+    guests: number;
+    date: string;
+    periodo: string;
+    status: ReservationStatus;
+  }>({
     name: "",
     email: "",
     phone: "",
     guests: 1,
     date: "",
     periodo: "tarde",
+    status: "pending",
   });
 
   const isAuthed = Boolean(user && session && isAdmin);
