@@ -290,6 +290,7 @@ const ReservationForm = () => {
               value={formData.phone}
               onChange={handleInputChange}
               placeholder="(XX) XXXXX-XXXX"
+              maxLength={16}
               className="bg-input border-border/30 focus:border-primary/50 transition-colors"
             />
           </div>
