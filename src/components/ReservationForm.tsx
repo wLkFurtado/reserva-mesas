@@ -19,7 +19,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { maskPhone } from "@/lib/phone-mask";
 import { reservationSchema, type ReservationFormValues } from "@/lib/validation";
-import { useReservationStatus } from "@/hooks/useReservations";
+import { useReservationStatusByPeriod } from "@/hooks/useReservations";
 
 const ReservationForm = () => {
   const navigate = useNavigate();
@@ -48,7 +48,7 @@ const ReservationForm = () => {
   const phone = watch("phone");
   const periodo = watch("periodo");
 
-  const { data: status, isFetching: statusLoading } = useReservationStatus(date);
+  const { data: status, isFetching: statusLoading } = useReservationStatusByPeriod(date);
 
   const onSubmit = async (values: ReservationFormValues) => {
     setIsSubmitting(true);
@@ -64,15 +64,19 @@ const ReservationForm = () => {
         return;
       }
 
-      // Verificação extra de capacidade
+      // Verificação extra de capacidade — POR PERÍODO
       // @ts-ignore
-      const { data: statusData } = await supabase.rpc("get_reservations_status", {
+      const { data: statusData } = await supabase.rpc("get_reservations_status_by_period", {
         target_date: values.date,
       });
       const row = (statusData as any[])?.[0];
-      const seatsRemainingCheck = row?.seats_remaining ?? 110;
+      const remainingForPeriodo =
+        values.periodo === "tarde"
+          ? row?.seats_remaining_tarde ?? 110
+          : row?.seats_remaining_noite ?? 110;
+      const remainingTotal = row?.seats_remaining_total ?? 110;
 
-      if (seatsRemainingCheck <= 0) {
+      if (remainingTotal <= 0) {
         toast({
           title: "Sem lugares disponíveis",
           description:
@@ -81,10 +85,10 @@ const ReservationForm = () => {
         });
         return;
       }
-      if (values.guests > seatsRemainingCheck) {
+      if (values.guests > remainingForPeriodo) {
         toast({
-          title: "Lugares insuficientes",
-          description: `Restam apenas ${seatsRemainingCheck} lugares nesta data.`,
+          title: "Lugares insuficientes neste período",
+          description: `Restam apenas ${remainingForPeriodo} lugares no período da ${values.periodo}.`,
           variant: "destructive",
         });
         return;
@@ -133,9 +137,12 @@ const ReservationForm = () => {
   };
 
   const today = new Date().toISOString().split("T")[0];
-  const seatsBooked = status?.seatsBooked ?? 0;
-  const seatsRemaining = status?.seatsRemaining ?? 110;
-  const dayFull = !!status && seatsRemaining === 0;
+  const tardeRemaining = status?.tarde.remaining ?? 110;
+  const noiteRemaining = status?.noite.remaining ?? 110;
+  const totalRemaining = status?.total.remaining ?? 110;
+  const dayFull = !!status && totalRemaining === 0;
+  const tardeFull = !!status && tardeRemaining === 0;
+  const noiteFull = !!status && noiteRemaining === 0;
 
   return (
     <Card className="w-full max-w-2xl mx-auto bg-gradient-elegant border-border/50 backdrop-blur-sm shadow-elegant">
