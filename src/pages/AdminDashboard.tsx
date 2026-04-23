@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,6 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar, Users, Plus, Search, Trash2, Edit, Phone, Mail, LogOut, User, CalendarIcon } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AdminAuth } from "@/components/AdminAuth";
 import { format } from "date-fns";
@@ -20,22 +19,18 @@ import {
   todayLocalISO,
 } from "@/lib/date-utils";
 import { maskPhone } from "@/lib/phone-mask";
+import {
+  useReservations,
+  useCreateReservation,
+  useUpdateReservation,
+  useDeleteReservation,
+  type Reservation,
+} from "@/hooks/useReservations";
+import { reservationAdminSchema } from "@/lib/validation";
 
-interface Reservation {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  guests: number;
-  date: string;
-  periodo: string;
-  created_at: string;
-}
 
 const AdminDashboard = () => {
   const { user, session, loading: authLoading, isAdmin, signOut } = useAuth();
-  const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedDateFilter, setSelectedDateFilter] = useState<Date | undefined>(undefined);
   const [selectedDate, setSelectedDate] = useState("");
@@ -56,136 +51,79 @@ const AdminDashboard = () => {
     periodo: "tarde",
   });
 
-  // Validação do formulário (Admin)
+  const isAuthed = Boolean(user && session && isAdmin);
+  const {
+    data: reservations = [],
+    isLoading: loading,
+    refetch,
+  } = useReservations(isAuthed);
+  const createMutation = useCreateReservation();
+  const updateMutation = useUpdateReservation();
+  const deleteMutation = useDeleteReservation();
+
+  // Validação via Zod
   const validateFormData = (): boolean => {
-    if (!formData.name.trim()) { toast({ title: "Nome é obrigatório", variant: "destructive" }); return false; }
-    if (!formData.email.trim()) { toast({ title: "Email é obrigatório", variant: "destructive" }); return false; }
-    if (!formData.phone.trim()) { toast({ title: "Telefone é obrigatório", variant: "destructive" }); return false; }
-    if (!formData.date) { toast({ title: "Data é obrigatória", variant: "destructive" }); return false; }
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(formData.date)) {
-      toast({ title: "Data inválida", variant: "destructive" });
+    const result = reservationAdminSchema.safeParse(formData);
+    if (!result.success) {
+      const first = result.error.issues[0];
+      toast({ title: first?.message ?? "Dados inválidos", variant: "destructive" });
       return false;
     }
-    if (!formData.periodo) { toast({ title: "Período é obrigatório", variant: "destructive" }); return false; }
-    if (formData.guests < 1) { toast({ title: "Número de pessoas deve ser maior que 0", variant: "destructive" }); return false; }
     return true;
   };
 
-  // Fetch reservations from Supabase
-  const fetchReservations = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("reservations")
-        .select("*")
-        .order("date", { ascending: false })
-        .order("created_at", { ascending: false });
-
-      if (error) {
-        console.error("Erro ao buscar reservas:", error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível carregar as reservas.",
-          variant: "destructive",
-        });
-      } else {
-        setReservations(data || []);
-      }
-    } catch (error) {
-      console.error("Erro inesperado:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Create new reservation
   const createReservation = async () => {
     if (!validateFormData()) return;
-
     try {
-      const payload = {
+      await createMutation.mutateAsync({
         name: formData.name.trim(),
         email: formData.email.trim(),
         phone: formData.phone.trim(),
         guests: Number(formData.guests) || 1,
         date: formData.date,
         periodo: formData.periodo,
-      };
-
-      const { error } = await supabase.from("reservations").insert([payload]);
-
-      if (error) {
-        console.error("Erro ao criar reserva:", error);
-        toast({
-          title: "Erro ao criar reserva",
-          description: error.message || "Não foi possível criar a reserva.",
-          variant: "destructive",
-        });
-        return;
-      }
-
+      });
       toast({ title: "Sucesso", description: "Reserva criada com sucesso!" });
       setShowCreateForm(false);
       resetForm();
-      fetchReservations();
-    } catch (error) {
-      console.error("Erro inesperado:", error);
+    } catch (error: any) {
       toast({
-        title: "Erro inesperado",
-        description: "Tente novamente em instantes.",
+        title: "Erro ao criar reserva",
+        description: error?.message || "Não foi possível criar a reserva.",
         variant: "destructive",
       });
     }
   };
 
-  // Update reservation
   const updateReservation = async () => {
     if (!editingReservation) return;
-
+    if (!validateFormData()) return;
     try {
-      const { error } = await supabase
-        .from("reservations")
-        .update(formData)
-        .eq("id", editingReservation.id);
-
-      if (error) {
-        console.error("Erro ao atualizar reserva:", error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível atualizar a reserva.",
-          variant: "destructive",
-        });
-      } else {
-        toast({ title: "Sucesso", description: "Reserva atualizada com sucesso!" });
-        setEditingReservation(null);
-        resetForm();
-        fetchReservations();
-      }
-    } catch (error) {
-      console.error("Erro inesperado:", error);
+      await updateMutation.mutateAsync({ id: editingReservation.id, values: formData });
+      toast({ title: "Sucesso", description: "Reserva atualizada com sucesso!" });
+      setEditingReservation(null);
+      resetForm();
+      setShowCreateForm(false);
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error?.message || "Não foi possível atualizar a reserva.",
+        variant: "destructive",
+      });
     }
   };
 
-  // Delete reservation
   const deleteReservation = async (id: string) => {
     if (!confirm("Tem certeza que deseja excluir esta reserva?")) return;
-
     try {
-      const { error } = await supabase.from("reservations").delete().eq("id", id);
-
-      if (error) {
-        console.error("Erro ao excluir reserva:", error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível excluir a reserva.",
-          variant: "destructive",
-        });
-      } else {
-        toast({ title: "Sucesso", description: "Reserva excluída com sucesso!" });
-        fetchReservations();
-      }
-    } catch (error) {
-      console.error("Erro inesperado:", error);
+      await deleteMutation.mutateAsync(id);
+      toast({ title: "Sucesso", description: "Reserva excluída com sucesso!" });
+    } catch (error: any) {
+      toast({
+        title: "Erro",
+        description: error?.message || "Não foi possível excluir a reserva.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -316,11 +254,8 @@ const AdminDashboard = () => {
   const totalGuests = reservations.reduce((sum, r) => sum + r.guests, 0);
   const todayReservations = reservations.filter((r) => r.date === todayLocalISO()).length;
 
-  useEffect(() => {
-    if (user && session && isAdmin) {
-      fetchReservations();
-    }
-  }, [user?.id, session?.access_token, isAdmin]);
+  // React Query gerencia o fetch automaticamente quando isAuthed muda
+
 
   // Show loading while checking authentication
   if (authLoading) {
@@ -566,7 +501,7 @@ const AdminDashboard = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={fetchReservations}
+                      onClick={() => refetch()}
                       className="flex-1 text-xs"
                     >
                       Atualizar
