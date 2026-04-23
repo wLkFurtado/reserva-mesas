@@ -28,6 +28,7 @@ export const reservationSchema = z.object({
   periodo: z.enum(["tarde", "noite"], {
     errorMap: () => ({ message: "Selecione um período válido" }),
   }),
+  message: z.string().trim().max(500, "Mensagem muito longa").optional(),
 });
 
 export type ReservationFormValues = z.infer<typeof reservationSchema>;
@@ -41,6 +42,7 @@ export const reservationAdminSchema = reservationSchema.extend({
     .min(1, "Mínimo 1 pessoa")
     .max(110, "Máximo 110 pessoas"),
   status: z.enum(["pending", "confirmed", "cancelled"]).optional(),
+  message: z.string().trim().max(500, "Mensagem muito longa").optional(),
 });
 
 export type ReservationAdminValues = z.infer<typeof reservationAdminSchema>;

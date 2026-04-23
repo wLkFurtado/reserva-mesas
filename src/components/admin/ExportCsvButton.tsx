@@ -44,6 +44,7 @@ export const ExportCsvButton = ({
       "Data",
       "Periodo",
       "Status",
+      "Mensagem",
       "Criada em",
     ];
     const rows = reservations.map((r) => [
@@ -54,6 +55,7 @@ export const ExportCsvButton = ({
       formatDateToDisplay(r.date),
       periodoLabel(r.periodo),
       statusLabel((r as any).status),
+      r.message || "",
       new Date(r.created_at).toLocaleString("pt-BR"),
     ]);
     const csv = [headers, ...rows]

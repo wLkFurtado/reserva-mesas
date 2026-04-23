@@ -13,8 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CalendarDays, Clock, Users, Phone, Mail, User } from "lucide-react";
+import { CalendarDays, Clock, Users, Phone, Mail, User, MessageSquare } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { maskPhone } from "@/lib/phone-mask";
@@ -40,6 +41,7 @@ const ReservationForm = () => {
       guests: 1,
       date: "",
       periodo: undefined as any,
+      message: "",
     },
   });
 
@@ -94,9 +96,14 @@ const ReservationForm = () => {
         return;
       }
 
+      const payload = { ...values };
+      if (!payload.message || payload.message.trim() === "") {
+        delete payload.message;
+      }
+
       const { error: insertError } = await supabase
         .from("reservations")
-        .insert([values as Required<ReservationFormValues>]);
+        .insert([payload as Required<ReservationFormValues>]);
 
       if (insertError) {
         const msg = insertError.message || "Erro ao salvar.";
@@ -141,6 +148,7 @@ const ReservationForm = () => {
   const noiteRemaining = status?.noite.remaining ?? 110;
   const totalRemaining = status?.total.remaining ?? 110;
   const dayFull = !!status && totalRemaining === 0;
+  const almostFull = !!status && totalRemaining > 0 && totalRemaining <= 20;
   const tardeFull = !!status && tardeRemaining === 0;
   const noiteFull = !!status && noiteRemaining === 0;
 
@@ -295,9 +303,14 @@ const ReservationForm = () => {
                   <p className="text-sm text-muted-foreground">Disponibilidade: 110 lugares</p>
                 )}
                 {dayFull && (
-                  <p className="text-sm text-primary">
-                    Não há lugares disponíveis nesta data.
-                  </p>
+                  <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-md text-destructive text-sm font-medium flex items-center gap-2">
+                    ⚠️ Este dia está completamente lotado. Não há mais lugares disponíveis.
+                  </div>
+                )}
+                {almostFull && !dayFull && (
+                  <div className="p-3 bg-accent/10 border border-accent/20 rounded-md text-accent text-sm font-medium flex items-center gap-2">
+                    ⚠️ Atenção: Faltam apenas {totalRemaining} lugares para lotar este dia!
+                  </div>
                 )}
               </div>
             )}
@@ -329,6 +342,24 @@ const ReservationForm = () => {
             </select>
             {errors.periodo && (
               <p className="text-sm text-destructive">{errors.periodo.message}</p>
+            )}
+          </div>
+
+          {/* Mensagem Opcional */}
+          <div className="space-y-2">
+            <Label htmlFor="message" className="flex items-center gap-2 text-foreground">
+              <MessageSquare className="w-4 h-4 text-primary" />
+              Mensagem ou Ocasião Especial (Opcional)
+            </Label>
+            <Textarea
+              id="message"
+              placeholder="Ex: Aniversário, intolerância a glúten, pedido especial..."
+              className="bg-input border-border/30 focus:border-primary/50 transition-colors resize-none"
+              rows={3}
+              {...register("message")}
+            />
+            {errors.message && (
+              <p className="text-sm text-destructive">{errors.message.message}</p>
             )}
           </div>
 

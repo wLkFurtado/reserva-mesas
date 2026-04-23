@@ -42,8 +42,15 @@ export const AdminAuth = () => {
 
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-md bg-gradient-elegant border-border/50">
+    <div className="min-h-screen bg-gradient-dark flex flex-col items-center justify-center p-4">
+      <div className="mb-8 text-center">
+        <img 
+          src="/lovable-uploads/217466e6-0237-451b-8c09-883c5b7422d0.png"
+          alt="Tróia Restaurante"
+          className="mx-auto h-20 w-auto mb-4 opacity-90"
+        />
+      </div>
+      <Card className="w-full max-w-md bg-[#1F2128] border-border/10">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold text-foreground">
             Admin Dashboard

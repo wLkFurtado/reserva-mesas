@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Clock, MapPin, Users } from "lucide-react";
+import { CheckCircle, Clock, MapPin, Users, ClipboardList, Flag } from "lucide-react";
 
 const ThankYou = () => {
   const [searchParams] = useSearchParams();
@@ -81,8 +81,9 @@ const ThankYou = () => {
 
           {/* Informações Importantes */}
           <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 space-y-3">
-            <h3 className="font-semibold text-lg text-primary">
-              📋 Informações Importantes
+            <h3 className="font-semibold text-lg text-primary flex items-center gap-2">
+              <ClipboardList className="w-5 h-5" />
+              Informações Importantes
             </h3>
             <div className="space-y-3 text-sm text-foreground">
               <p>
@@ -91,9 +92,9 @@ const ThankYou = () => {
               <p>
                 Reservas serão feitas no local determinado, mediante disponibilidade.
               </p>
-              <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
                 <p className="flex items-start gap-2">
-                  <span className="text-red-500 font-bold">🚩</span>
+                  <Flag className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
                   <span><strong>Exemplo:</strong> Caso dê o horário da reserva, a casa se coloca no direito de finalizar a mesma e disponibilizar as mesas e cadeiras para clientes que estejam aguardando atendimento na fila de espera.</span>
                 </p>
               </div>

@@ -5,6 +5,7 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 export type ReservationStatus = "pending" | "confirmed" | "cancelled";
 
@@ -17,7 +18,17 @@ export interface Reservation {
   date: string;
   periodo: string;
   status: ReservationStatus;
+  message?: string;
   created_at: string;
+}
+
+export interface ReservationLog {
+  id: string;
+  reservation_id: string;
+  old_status: string | null;
+  new_status: string;
+  note: string | null;
+  changed_at: string;
 }
 
 export interface ReservationCapacity {
@@ -106,8 +117,17 @@ export const useReservations = (enabled: boolean) => {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "reservations" },
-        () => {
+        (payload) => {
           qc.invalidateQueries({ queryKey: RESERVATIONS_KEY });
+          if (payload.eventType === "INSERT") {
+            const newRes = payload.new as Reservation;
+            toast({
+              title: "Nova Reserva Recebida! 🛎️",
+              description: `${newRes.name} — ${newRes.guests} pessoas para ${newRes.periodo === "tarde" ? "Tarde" : "Noite"}`,
+              className: "bg-primary border-primary text-primary-foreground",
+              duration: 5000,
+            });
+          }
         }
       )
       .subscribe();
@@ -164,6 +184,30 @@ export const useDeleteReservation = () => {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: RESERVATIONS_KEY });
+    },
+  });
+};
+
+/* ---------------- Logs (admin) ---------------- */
+
+export const useReservationLogs = (reservationId: string | null | undefined) => {
+  return useQuery<ReservationLog[]>({
+    queryKey: ["reservation-logs", reservationId],
+    enabled: Boolean(reservationId),
+    queryFn: async () => {
+      if (!reservationId) return [];
+      const { data, error } = await supabase
+        .from("reservation_logs")
+        .select("*")
+        .eq("reservation_id", reservationId)
+        .order("changed_at", { ascending: false });
+      
+      // If table doesn't exist yet (migration not run), just return empty array instead of failing
+      if (error) {
+        if (error.code === '42P01') return []; // relation does not exist
+        throw error;
+      }
+      return (data as ReservationLog[]) ?? [];
     },
   });
 };

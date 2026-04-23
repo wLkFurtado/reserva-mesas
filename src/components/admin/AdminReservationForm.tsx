@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -35,6 +36,7 @@ interface FormState {
   date: string;
   periodo: string;
   status: ReservationStatus;
+  message?: string;
 }
 
 const empty: FormState = {
@@ -45,6 +47,7 @@ const empty: FormState = {
   date: "",
   periodo: "tarde",
   status: "pending",
+  message: "",
 };
 
 interface Props {
@@ -68,6 +71,7 @@ export const AdminReservationForm = ({ open, editing, onClose, onSubmit }: Props
         date: editing.date,
         periodo: editing.periodo,
         status: (editing.status ?? "pending") as ReservationStatus,
+        message: editing.message || "",
       });
     } else {
       setData(empty);
@@ -85,8 +89,14 @@ export const AdminReservationForm = ({ open, editing, onClose, onSubmit }: Props
       return;
     }
     setSubmitting(true);
+    
+    const payload = { ...data };
+    if (!payload.message || payload.message.trim() === "") {
+      delete payload.message;
+    }
+
     try {
-      await onSubmit(data, editing?.id);
+      await onSubmit(payload, editing?.id);
       onClose();
     } finally {
       setSubmitting(false);
@@ -157,6 +167,16 @@ export const AdminReservationForm = ({ open, editing, onClose, onSubmit }: Props
                 <SelectItem value="cancelled">Cancelada</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="md:col-span-2">
+            <Label>Mensagem / Ocasião Especial (Opcional)</Label>
+            <Textarea 
+              value={data.message || ""} 
+              onChange={(e) => setData({ ...data, message: e.target.value })} 
+              placeholder="Ex: Aniversário, alergias, pedido especial..."
+              className="mt-1 resize-none"
+              rows={3}
+            />
           </div>
         </div>
         <DialogFooter>
