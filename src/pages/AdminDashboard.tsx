@@ -501,7 +501,7 @@ const AdminDashboard = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={fetchReservations}
+                      onClick={() => refetch()}
                       className="flex-1 text-xs"
                     >
                       Atualizar
