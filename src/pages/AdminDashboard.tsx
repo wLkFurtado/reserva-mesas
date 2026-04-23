@@ -478,7 +478,8 @@ const AdminDashboard = () => {
           <CardHeader>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <CardTitle>Reservas</CardTitle>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
+                <ExportCsvButton reservations={sortedReservations} />
                 <Button
                   onClick={() => setShowCreateForm(true)}
                   className="bg-primary hover:bg-primary/90"
@@ -607,6 +608,21 @@ const AdminDashboard = () => {
                   </select>
                 </div>
 
+                <div>
+                  <Label htmlFor="status-filter" className="text-sm font-medium">Status</Label>
+                  <select
+                    id="status-filter"
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value)}
+                    className="mt-1 w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
+                  >
+                    <option value="">Todos os status</option>
+                    <option value="pending">Pendente</option>
+                    <option value="confirmed">Confirmada</option>
+                    <option value="cancelled">Cancelada</option>
+                  </select>
+                </div>
+
                 <div className="flex flex-col justify-end">
                   <div className="flex gap-2">
                     <Button
@@ -619,6 +635,8 @@ const AdminDashboard = () => {
                         setSelectedDateFilter(undefined);
                         setSelectedPeriodo("");
                         setSelectedGuests("");
+                        setSelectedStatus("");
+                        setPage(1);
                       }}
                       className="flex-1 text-xs"
                     >
