@@ -13,6 +13,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { AdminAuth } from "@/components/AdminAuth";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import {
+  parseLocalDate,
+  toLocalISO,
+  formatDateToDisplay,
+  todayLocalISO,
+} from "@/lib/date-utils";
+import { maskPhone } from "@/lib/phone-mask";
 
 interface Reservation {
   id: string;
@@ -33,12 +40,12 @@ const AdminDashboard = () => {
   const [selectedDateFilter, setSelectedDateFilter] = useState<Date | undefined>(undefined);
   const [selectedDate, setSelectedDate] = useState("");
   const [displayDate, setDisplayDate] = useState("");
-  const [formDisplayDate, setFormDisplayDate] = useState("");
   const [selectedPeriodo, setSelectedPeriodo] = useState("");
   const [selectedGuests, setSelectedGuests] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [editingReservation, setEditingReservation] = useState<Reservation | null>(null);
-  
+  const [formDateObj, setFormDateObj] = useState<Date | undefined>(undefined);
+
   // Form data for creating/editing reservations
   const [formData, setFormData] = useState({
     name: "",
@@ -46,7 +53,7 @@ const AdminDashboard = () => {
     phone: "",
     guests: 1,
     date: "",
-    periodo: "tarde"
+    periodo: "tarde",
   });
 
   // Validação do formulário (Admin)
@@ -56,7 +63,7 @@ const AdminDashboard = () => {
     if (!formData.phone.trim()) { toast({ title: "Telefone é obrigatório", variant: "destructive" }); return false; }
     if (!formData.date) { toast({ title: "Data é obrigatória", variant: "destructive" }); return false; }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(formData.date)) {
-      toast({ title: "Data inválida", description: "Use o formato dd/mm/aaaa", variant: "destructive" });
+      toast({ title: "Data inválida", variant: "destructive" });
       return false;
     }
     if (!formData.periodo) { toast({ title: "Período é obrigatório", variant: "destructive" }); return false; }
@@ -79,7 +86,7 @@ const AdminDashboard = () => {
         toast({
           title: "Erro",
           description: "Não foi possível carregar as reservas.",
-          variant: "destructive"
+          variant: "destructive",
         });
       } else {
         setReservations(data || []);
@@ -101,29 +108,23 @@ const AdminDashboard = () => {
         email: formData.email.trim(),
         phone: formData.phone.trim(),
         guests: Number(formData.guests) || 1,
-        date: formData.date, // deve estar no formato YYYY-MM-DD
+        date: formData.date,
         periodo: formData.periodo,
       };
 
-      const { error } = await supabase
-        .from("reservations")
-        .insert([payload]);
+      const { error } = await supabase.from("reservations").insert([payload]);
 
       if (error) {
         console.error("Erro ao criar reserva:", error);
         toast({
           title: "Erro ao criar reserva",
           description: error.message || "Não foi possível criar a reserva.",
-          variant: "destructive"
+          variant: "destructive",
         });
         return;
       }
 
-      console.log("✅ Reserva criada com sucesso");
-      toast({
-        title: "Sucesso",
-        description: "Reserva criada com sucesso!"
-      });
+      toast({ title: "Sucesso", description: "Reserva criada com sucesso!" });
       setShowCreateForm(false);
       resetForm();
       fetchReservations();
@@ -132,7 +133,7 @@ const AdminDashboard = () => {
       toast({
         title: "Erro inesperado",
         description: "Tente novamente em instantes.",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
@@ -152,13 +153,10 @@ const AdminDashboard = () => {
         toast({
           title: "Erro",
           description: "Não foi possível atualizar a reserva.",
-          variant: "destructive"
+          variant: "destructive",
         });
       } else {
-        toast({
-          title: "Sucesso",
-          description: "Reserva atualizada com sucesso!"
-        });
+        toast({ title: "Sucesso", description: "Reserva atualizada com sucesso!" });
         setEditingReservation(null);
         resetForm();
         fetchReservations();
@@ -168,29 +166,22 @@ const AdminDashboard = () => {
     }
   };
 
-
   // Delete reservation
   const deleteReservation = async (id: string) => {
     if (!confirm("Tem certeza que deseja excluir esta reserva?")) return;
 
     try {
-      const { error } = await supabase
-        .from("reservations")
-        .delete()
-        .eq("id", id);
+      const { error } = await supabase.from("reservations").delete().eq("id", id);
 
       if (error) {
         console.error("Erro ao excluir reserva:", error);
         toast({
           title: "Erro",
           description: "Não foi possível excluir a reserva.",
-          variant: "destructive"
+          variant: "destructive",
         });
       } else {
-        toast({
-          title: "Sucesso",
-          description: "Reserva excluída com sucesso!"
-        });
+        toast({ title: "Sucesso", description: "Reserva excluída com sucesso!" });
         fetchReservations();
       }
     } catch (error) {
@@ -200,15 +191,8 @@ const AdminDashboard = () => {
 
   // Reset form
   const resetForm = () => {
-    setFormData({
-      name: "",
-      email: "",
-      phone: "",
-      guests: 1,
-      date: "",
-      periodo: "tarde"
-    });
-    setFormDisplayDate("");
+    setFormData({ name: "", email: "", phone: "", guests: 1, date: "", periodo: "tarde" });
+    setFormDateObj(undefined);
   };
 
   // Start editing
@@ -220,9 +204,9 @@ const AdminDashboard = () => {
       phone: reservation.phone,
       guests: reservation.guests,
       date: reservation.date,
-      periodo: reservation.periodo
+      periodo: reservation.periodo,
     });
-    setFormDisplayDate(formatDateToDisplay(reservation.date));
+    setFormDateObj(parseLocalDate(reservation.date));
     setShowCreateForm(true);
   };
 
@@ -234,16 +218,16 @@ const AdminDashboard = () => {
   };
 
   // Filter reservations
-  const filteredReservations = reservations.filter(reservation => {
-    const matchesSearch = searchTerm === '' || 
+  const filteredReservations = reservations.filter((reservation) => {
+    const matchesSearch =
+      searchTerm === "" ||
       reservation.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       reservation.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       reservation.phone.includes(searchTerm);
-    
-    let matchesDate = !selectedDate || selectedDate === '';
+
+    let matchesDate = !selectedDate || selectedDate === "";
     if (selectedDate) {
       if (displayDate === "Próximos 7 dias") {
-        // Próximos 7 dias a partir de hoje (meia-noite local)
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
         const end = new Date(todayStart);
@@ -251,7 +235,6 @@ const AdminDashboard = () => {
         const reservationDate = parseLocalDate(reservation.date);
         matchesDate = reservationDate >= todayStart && reservationDate <= end;
       } else if (displayDate.startsWith("Semana atual")) {
-        // Semana atual (Segunda a Domingo) em horário local
         const todayLocal = new Date();
         const startOfWeek = new Date(todayLocal);
         const day = startOfWeek.getDay();
@@ -267,126 +250,31 @@ const AdminDashboard = () => {
         matchesDate = reservation.date === selectedDate;
       }
     }
-    
-    const matchesPeriodo = !selectedPeriodo || selectedPeriodo === '' || 
-      reservation.periodo === selectedPeriodo;
-      
-    const matchesGuests = !selectedGuests || selectedGuests === '' || 
-      (selectedGuests === '6' ? reservation.guests >= 6 : 
-       reservation.guests.toString() === selectedGuests);
-    
+
+    const matchesPeriodo =
+      !selectedPeriodo || selectedPeriodo === "" || reservation.periodo === selectedPeriodo;
+
+    const matchesGuests =
+      !selectedGuests ||
+      selectedGuests === "" ||
+      (selectedGuests === "6"
+        ? reservation.guests >= 6
+        : reservation.guests.toString() === selectedGuests);
+
     return matchesSearch && matchesDate && matchesPeriodo && matchesGuests;
   });
 
-  // Date formatting functions
-  const formatDateToDisplay = (isoDate: string) => {
-    if (!isoDate) return "";
-    const [year, month, day] = isoDate.split('-');
-    return `${day}/${month}/${year}`;
-  };
-
-  const formatDateToISO = (displayDate: string) => {
-    if (!displayDate) return "";
-    
-    // Remover espaços e verificar se tem pelo menos 8 caracteres (dd/mm/yy)
-    const cleaned = displayDate.trim();
-    if (cleaned.length < 8) return "";
-    
-    const [day, month, year] = cleaned.split('/');
-    if (!day || !month || !year) return "";
-    
-    // Validar se a data é válida
-    const dayNum = parseInt(day, 10);
-    const monthNum = parseInt(month, 10);
-    let yearNum = parseInt(year, 10);
-    
-    // Se o ano tem 2 dígitos, assumir 20xx
-    if (year.length === 2) {
-      yearNum = 2000 + yearNum;
-    }
-    
-    if (isNaN(dayNum) || isNaN(monthNum) || isNaN(yearNum)) return "";
-    if (dayNum < 1 || dayNum > 31 || monthNum < 1 || monthNum > 12 || yearNum < 2000) return "";
-    
-    // Formatar com zeros à esquerda
-    const formattedDay = dayNum.toString().padStart(2, '0');
-    const formattedMonth = monthNum.toString().padStart(2, '0');
-    
-    return `${yearNum}-${formattedMonth}-${formattedDay}`;
-  };
-
-  // Helpers para evitar mudança de dia por fuso (sempre horário local)
-  const parseLocalDate = (isoDate: string) => new Date(`${isoDate}T00:00:00`);
-  
-  const toLocalISO = (date: Date) => {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  };
-
-
-  const handleDateChange = (value: string) => {
-    // Remove caracteres não numéricos exceto /
-    const cleaned = value.replace(/[^\d\/]/g, '');
-    
-    // Aplicar máscara dd/mm/yyyy
-    let formatted = cleaned;
-    if (cleaned.length >= 2 && cleaned.charAt(2) !== '/') {
-      formatted = cleaned.slice(0, 2) + '/' + cleaned.slice(2);
-    }
-    if (cleaned.length >= 5 && cleaned.charAt(5) !== '/') {
-      formatted = formatted.slice(0, 5) + '/' + formatted.slice(5);
-    }
-    if (formatted.length > 10) {
-      formatted = formatted.slice(0, 10);
-    }
-    
-    setDisplayDate(formatted);
-    
-    // Converter para ISO se a data estiver completa
-    const isoDate = formatDateToISO(formatted);
-    setSelectedDate(isoDate);
-  };
-
-  const handleFormDateChange = (value: string) => {
-    // Remove caracteres não numéricos exceto /
-    const cleaned = value.replace(/[^\d\/]/g, '');
-    
-    // Aplicar máscara dd/mm/yyyy
-    let formatted = cleaned;
-    if (cleaned.length >= 2 && cleaned.charAt(2) !== '/') {
-      formatted = cleaned.slice(0, 2) + '/' + cleaned.slice(2);
-    }
-    if (cleaned.length >= 5 && cleaned.charAt(5) !== '/') {
-      formatted = formatted.slice(0, 5) + '/' + formatted.slice(5);
-    }
-    if (formatted.length > 10) {
-      formatted = formatted.slice(0, 10);
-    }
-    
-    setFormDisplayDate(formatted);
-    
-    // Converter para ISO se a data estiver completa
-    const isoDate = formatDateToISO(formatted);
-    setFormData({...formData, date: isoDate});
-  };
-
   // Quick date filter functions
-  const setQuickDateFilter = (type: 'today' | 'tomorrow' | 'week' | 'thisWeek' | 'next7Days') => {
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    
+  const setQuickDateFilter = (type: "today" | "tomorrow" | "week" | "thisWeek" | "next7Days") => {
     switch (type) {
-      case 'today': {
-        const todayISO = toLocalISO(new Date());
+      case "today": {
+        const todayISO = todayLocalISO();
         setSelectedDate(todayISO);
         setDisplayDate(formatDateToDisplay(todayISO));
         setSelectedDateFilter(new Date());
         break;
       }
-      case 'tomorrow': {
+      case "tomorrow": {
         const t = new Date();
         t.setDate(t.getDate() + 1);
         const tomorrowISO = toLocalISO(t);
@@ -395,29 +283,26 @@ const AdminDashboard = () => {
         setSelectedDateFilter(t);
         break;
       }
-      case 'thisWeek': {
-        // Show reservations for the current week (Monday to Sunday) em horário local
+      case "thisWeek": {
         const todayLocal = new Date();
         const startOfWeek = new Date(todayLocal);
         const day = startOfWeek.getDay();
-        const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Sunday
+        const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1);
         startOfWeek.setDate(diff);
         const startOfWeekISO = toLocalISO(startOfWeek);
         setSelectedDate(startOfWeekISO);
         setDisplayDate(`Semana atual (${formatDateToDisplay(startOfWeekISO)})`);
-        setSelectedDateFilter(undefined); // Week view doesn't select specific date
+        setSelectedDateFilter(undefined);
         break;
       }
-      case 'next7Days': {
-        // Show reservations for the next 7 days starting from today (local)
-        const next7DaysISO = toLocalISO(new Date());
+      case "next7Days": {
+        const next7DaysISO = todayLocalISO();
         setSelectedDate(next7DaysISO);
         setDisplayDate("Próximos 7 dias");
-        setSelectedDateFilter(undefined); // Range view doesn't select specific date
+        setSelectedDateFilter(undefined);
         break;
       }
-      case 'week': {
-        // For week, we'll clear the date filter and let user see all
+      case "week": {
         setSelectedDate("");
         setDisplayDate("");
         setSelectedDateFilter(undefined);
@@ -429,7 +314,7 @@ const AdminDashboard = () => {
   // Calculate statistics
   const totalReservations = reservations.length;
   const totalGuests = reservations.reduce((sum, r) => sum + r.guests, 0);
-  const todayReservations = reservations.filter(r => r.date === toLocalISO(new Date())).length;
+  const todayReservations = reservations.filter((r) => r.date === todayLocalISO()).length;
 
   useEffect(() => {
     if (user && session && isAdmin) {
@@ -456,11 +341,14 @@ const AdminDashboard = () => {
   const handleLogout = async () => {
     const { error } = await signOut();
     if (error) {
-      toast({ title: 'Erro ao sair', description: error.message, variant: 'destructive' });
+      toast({ title: "Erro ao sair", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: 'Logout realizado com sucesso!' });
+      toast({ title: "Logout realizado com sucesso!" });
     }
   };
+
+  const todayDate = new Date();
+  todayDate.setHours(0, 0, 0, 0);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background to-muted/20 p-4">
@@ -480,8 +368,8 @@ const AdminDashboard = () => {
               <User className="h-4 w-4" />
               <span>{user.email}</span>
             </div>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={handleLogout}
               className="flex items-center gap-2 hover:bg-destructive hover:text-destructive-foreground"
             >
@@ -490,7 +378,7 @@ const AdminDashboard = () => {
             </Button>
           </div>
         </div>
-        
+
         {/* Statistics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
@@ -502,7 +390,7 @@ const AdminDashboard = () => {
               <div className="text-2xl font-bold">{totalReservations}</div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total de Pessoas</CardTitle>
@@ -512,7 +400,7 @@ const AdminDashboard = () => {
               <div className="text-2xl font-bold">{totalGuests}</div>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Reservas Hoje</CardTitle>
@@ -530,7 +418,7 @@ const AdminDashboard = () => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <CardTitle>Reservas</CardTitle>
               <div className="flex gap-2">
-                <Button 
+                <Button
                   onClick={() => setShowCreateForm(true)}
                   className="bg-primary hover:bg-primary/90"
                 >
@@ -562,46 +450,11 @@ const AdminDashboard = () => {
               <div>
                 <Label className="text-sm font-medium">Filtros Rápidos</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setQuickDateFilter('today')}
-                    className="text-xs"
-                  >
-                    Hoje
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setQuickDateFilter('tomorrow')}
-                    className="text-xs"
-                  >
-                    Amanhã
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setQuickDateFilter('week')}
-                    className="text-xs"
-                  >
-                    Todas
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setQuickDateFilter('thisWeek' as any)}
-                    className="text-xs"
-                  >
-                    Esta Semana
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setQuickDateFilter('next7Days' as any)}
-                    className="text-xs"
-                  >
-                    Próximos 7 dias
-                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setQuickDateFilter("today")} className="text-xs">Hoje</Button>
+                  <Button variant="outline" size="sm" onClick={() => setQuickDateFilter("tomorrow")} className="text-xs">Amanhã</Button>
+                  <Button variant="outline" size="sm" onClick={() => setQuickDateFilter("week")} className="text-xs">Todas</Button>
+                  <Button variant="outline" size="sm" onClick={() => setQuickDateFilter("thisWeek")} className="text-xs">Esta Semana</Button>
+                  <Button variant="outline" size="sm" onClick={() => setQuickDateFilter("next7Days")} className="text-xs">Próximos 7 dias</Button>
                 </div>
               </div>
 
@@ -642,9 +495,9 @@ const AdminDashboard = () => {
                       />
                       {selectedDateFilter && (
                         <div className="p-3 border-t">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => {
                               setSelectedDateFilter(undefined);
                               setSelectedDate("");
@@ -659,7 +512,7 @@ const AdminDashboard = () => {
                     </PopoverContent>
                   </Popover>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="periodo-filter" className="text-sm font-medium">Período</Label>
                   <select
@@ -674,7 +527,7 @@ const AdminDashboard = () => {
                     <option value="noite">Noite</option>
                   </select>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="guests-filter" className="text-sm font-medium">Nº de Pessoas</Label>
                   <select
@@ -692,16 +545,17 @@ const AdminDashboard = () => {
                     <option value="6">6+ pessoas</option>
                   </select>
                 </div>
-                
+
                 <div className="flex flex-col justify-end">
                   <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={() => {
                         setSearchTerm("");
                         setSelectedDate("");
                         setDisplayDate("");
+                        setSelectedDateFilter(undefined);
                         setSelectedPeriodo("");
                         setSelectedGuests("");
                       }}
@@ -709,8 +563,8 @@ const AdminDashboard = () => {
                     >
                       Limpar
                     </Button>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       onClick={fetchReservations}
                       className="flex-1 text-xs"
@@ -725,29 +579,27 @@ const AdminDashboard = () => {
               <div className="text-sm text-muted-foreground">
                 Mostrando {filteredReservations.length} de {reservations.length} reservas
               </div>
-              
+
               {/* Filter Summary */}
               {(searchTerm || selectedDate || selectedPeriodo || selectedGuests) && (
                 <div className="mt-3 flex flex-wrap gap-2 text-sm">
                   <span className="text-muted-foreground">Filtros ativos:</span>
                   {searchTerm && (
-                    <Badge variant="secondary" className="text-xs">
-                      Busca: "{searchTerm}"
-                    </Badge>
+                    <Badge variant="secondary" className="text-xs">Busca: "{searchTerm}"</Badge>
                   )}
                   {selectedDate && (
                     <Badge variant="secondary" className="text-xs">
-                      Data: {formatDateToDisplay(selectedDate)}
+                      Data: {displayDate || formatDateToDisplay(selectedDate)}
                     </Badge>
                   )}
                   {selectedPeriodo && (
                     <Badge variant="secondary" className="text-xs">
-                      Período: {selectedPeriodo === 'manha' ? 'Manhã' : selectedPeriodo === 'tarde' ? 'Tarde' : 'Noite'}
+                      Período: {selectedPeriodo === "manha" ? "Manhã" : selectedPeriodo === "tarde" ? "Tarde" : "Noite"}
                     </Badge>
                   )}
                   {selectedGuests && (
                     <Badge variant="secondary" className="text-xs">
-                      Pessoas: {selectedGuests === '6' ? '6+ pessoas' : `${selectedGuests} pessoa${selectedGuests !== '1' ? 's' : ''}`}
+                      Pessoas: {selectedGuests === "6" ? "6+ pessoas" : `${selectedGuests} pessoa${selectedGuests !== "1" ? "s" : ""}`}
                     </Badge>
                   )}
                 </div>
@@ -769,7 +621,7 @@ const AdminDashboard = () => {
                       <Input
                         id="name"
                         value={formData.name}
-                        onChange={(e) => setFormData({...formData, name: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         placeholder="Nome do cliente"
                       />
                     </div>
@@ -779,7 +631,7 @@ const AdminDashboard = () => {
                         id="email"
                         type="email"
                         value={formData.email}
-                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         placeholder="email@exemplo.com"
                       />
                     </div>
@@ -788,8 +640,11 @@ const AdminDashboard = () => {
                       <Input
                         id="phone"
                         value={formData.phone}
-                        onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                        onChange={(e) =>
+                          setFormData({ ...formData, phone: maskPhone(e.target.value) })
+                        }
                         placeholder="(XX) XXXXX-XXXX"
+                        maxLength={16}
                       />
                     </div>
                     <div>
@@ -800,26 +655,45 @@ const AdminDashboard = () => {
                         min="1"
                         max="50"
                         value={formData.guests}
-                        onChange={(e) => setFormData({...formData, guests: parseInt(e.target.value) || 1})}
+                        onChange={(e) => setFormData({ ...formData, guests: parseInt(e.target.value) || 1 })}
                       />
                     </div>
                     <div>
                       <Label htmlFor="date">Data da Reserva</Label>
-                      <Input
-                        id="date"
-                        type="text"
-                        placeholder="dd/mm/yyyy"
-                        value={formDisplayDate}
-                        onChange={(e) => handleFormDateChange(e.target.value)}
-                        maxLength={10}
-                      />
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal mt-1",
+                              !formDateObj && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {formDateObj ? format(formDateObj, "dd/MM/yyyy") : "Selecionar data"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <CalendarComponent
+                            mode="single"
+                            selected={formDateObj}
+                            onSelect={(date) => {
+                              setFormDateObj(date);
+                              setFormData({ ...formData, date: date ? toLocalISO(date) : "" });
+                            }}
+                            disabled={(date) => date < todayDate}
+                            initialFocus
+                            className={cn("p-3 pointer-events-auto")}
+                          />
+                        </PopoverContent>
+                      </Popover>
                     </div>
                     <div>
                       <Label htmlFor="periodo">Período</Label>
                       <select
                         id="periodo"
                         value={formData.periodo}
-                        onChange={(e) => setFormData({...formData, periodo: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, periodo: e.target.value })}
                         className="w-full px-3 py-2 border border-input bg-background rounded-md"
                       >
                         <option value="tarde">Tarde</option>
@@ -828,7 +702,7 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button 
+                    <Button
                       onClick={editingReservation ? updateReservation : createReservation}
                       className="bg-primary hover:bg-primary/90"
                     >
@@ -854,8 +728,8 @@ const AdminDashboard = () => {
                   <div className="text-6xl mb-4 text-muted-foreground">📋</div>
                   <h3 className="text-lg font-semibold mb-2">Nenhuma reserva encontrada</h3>
                   <p className="text-muted-foreground mb-4">
-                    {reservations.length === 0 
-                      ? "Ainda não há reservas cadastradas. Que tal criar algumas?" 
+                    {reservations.length === 0
+                      ? "Ainda não há reservas cadastradas. Que tal criar algumas?"
                       : "Nenhuma reserva corresponde aos filtros aplicados."}
                   </p>
                   <div className="flex gap-2 justify-center">
@@ -868,7 +742,10 @@ const AdminDashboard = () => {
             ) : (
               <div className="space-y-4">
                 {filteredReservations.map((reservation) => (
-                  <Card key={reservation.id} className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-primary/20 hover:border-l-primary">
+                  <Card
+                    key={reservation.id}
+                    className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-primary/20 hover:border-l-primary"
+                  >
                     <CardContent className="p-6">
                       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                         <div className="flex-1 space-y-4">
@@ -877,7 +754,7 @@ const AdminDashboard = () => {
                             <h3 className="font-bold text-xl text-foreground">{reservation.name}</h3>
                             <p className="text-xl italic text-muted-foreground">{reservation.phone}</p>
                           </div>
-                          
+
                           {/* Highlighted Reservation Details */}
                           <div className="flex flex-wrap gap-3 mb-3">
                             <Badge variant="default" className="px-3 py-1 text-sm font-medium">
@@ -888,41 +765,46 @@ const AdminDashboard = () => {
                               <Users className="w-4 h-4 mr-2" />
                               {reservation.guests} {reservation.guests === 1 ? "pessoa" : "pessoas"}
                             </Badge>
-                            <Badge variant={reservation.periodo === "tarde" ? "outline" : "secondary"} className="px-3 py-1 text-sm font-medium">
+                            <Badge
+                              variant={reservation.periodo === "tarde" ? "outline" : "secondary"}
+                              className="px-3 py-1 text-sm font-medium"
+                            >
                               {reservation.periodo === "tarde" ? "Tarde" : "Noite"}
                             </Badge>
                           </div>
-                          
+
                           {/* Secondary Info */}
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2">
                               <Mail className="w-4 h-4" />
                               <span className="truncate">{reservation.email}</span>
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                              Criada em: {format(new Date(reservation.created_at), "dd/MM/yyyy 'às' HH:mm")}
-                            </p>
+                            <div className="flex items-center gap-2">
+                              <Phone className="w-4 h-4" />
+                              <span>{reservation.phone}</span>
+                            </div>
                           </div>
                         </div>
-                        
-                        <div className="flex flex-col sm:flex-row gap-2 min-w-fit">
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-2 lg:flex-col">
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => startEdit(reservation)}
-                            className="hover:bg-blue-50 hover:border-blue-300"
+                            className="flex items-center gap-2 hover:bg-primary hover:text-primary-foreground"
                           >
-                            <Edit className="w-4 h-4 mr-1" />
-                            Editar
+                            <Edit className="w-4 h-4" />
+                            <span className="hidden sm:inline">Editar</span>
                           </Button>
                           <Button
-                            variant="destructive"
+                            variant="outline"
                             size="sm"
                             onClick={() => deleteReservation(reservation.id)}
-                            className="hover:bg-red-600"
+                            className="flex items-center gap-2 hover:bg-destructive hover:text-destructive-foreground"
                           >
-                            <Trash2 className="w-4 h-4 mr-1" />
-                            Excluir
+                            <Trash2 className="w-4 h-4" />
+                            <span className="hidden sm:inline">Excluir</span>
                           </Button>
                         </div>
                       </div>
