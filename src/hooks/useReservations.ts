@@ -20,7 +20,7 @@ export interface Reservation {
   created_at: string;
 }
 
-export interface ReservationStatus {
+export interface ReservationCapacity {
   seatsBooked: number;
   seatsRemaining: number;
   capacity: number;
@@ -33,7 +33,9 @@ export interface ReservationStatusByPeriod {
   noite: { booked: number; remaining: number };
 }
 
-export type ReservationInput = Omit<Reservation, "id" | "created_at">;
+export type ReservationInput = Omit<Reservation, "id" | "created_at" | "status"> & {
+  status?: ReservationStatus;
+};
 
 const RESERVATIONS_KEY = ["reservations"] as const;
 
