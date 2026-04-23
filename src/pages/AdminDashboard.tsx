@@ -254,11 +254,8 @@ const AdminDashboard = () => {
   const totalGuests = reservations.reduce((sum, r) => sum + r.guests, 0);
   const todayReservations = reservations.filter((r) => r.date === todayLocalISO()).length;
 
-  useEffect(() => {
-    if (user && session && isAdmin) {
-      fetchReservations();
-    }
-  }, [user?.id, session?.access_token, isAdmin]);
+  // React Query gerencia o fetch automaticamente quando isAuthed muda
+
 
   // Show loading while checking authentication
   if (authLoading) {
