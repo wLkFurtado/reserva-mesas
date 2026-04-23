@@ -23,31 +23,53 @@ export interface ReservationStatus {
   capacity: number;
 }
 
+export interface ReservationStatusByPeriod {
+  capacity: number;
+  total: { booked: number; remaining: number };
+  tarde: { booked: number; remaining: number };
+  noite: { booked: number; remaining: number };
+}
+
 export type ReservationInput = Omit<Reservation, "id" | "created_at">;
 
 const RESERVATIONS_KEY = ["reservations"] as const;
 
-/* ---------------- Status do dia (público) ---------------- */
+/* ---------------- Status do dia por período (público) ---------------- */
 
-export const useReservationStatus = (date: string | null | undefined) => {
-  return useQuery<ReservationStatus | null>({
-    queryKey: ["reservation-status", date],
+export const useReservationStatusByPeriod = (date: string | null | undefined) => {
+  return useQuery<ReservationStatusByPeriod | null>({
+    queryKey: ["reservation-status-by-period", date],
     enabled: Boolean(date),
     queryFn: async () => {
       if (!date) return null;
       // @ts-ignore RPC tipo opcional
-      const { data, error } = await supabase.rpc("get_reservations_status", {
+      const { data, error } = await supabase.rpc("get_reservations_status_by_period", {
         target_date: date,
       });
       if (error) throw error;
       const row = (data as any[])?.[0];
       if (!row) {
-        return { seatsBooked: 0, seatsRemaining: 110, capacity: 110 };
+        return {
+          capacity: 110,
+          total: { booked: 0, remaining: 110 },
+          tarde: { booked: 0, remaining: 110 },
+          noite: { booked: 0, remaining: 110 },
+        };
       }
       return {
-        seatsBooked: row.seats_booked ?? 0,
-        seatsRemaining: row.seats_remaining ?? 110,
         capacity: row.capacity ?? 110,
+        total: {
+          booked: row.seats_booked_total ?? 0,
+          remaining: row.seats_remaining_total ?? 110,
+        },
+        tarde: {
+          booked: row.seats_booked_tarde ?? 0,
+          remaining: row.seats_remaining_tarde ?? 110,
+        },
+        noite: {
+          booked: row.seats_booked_noite ?? 0,
+          remaining: row.seats_remaining_noite ?? 110,
+        },
       };
     },
   });

@@ -19,7 +19,7 @@ import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { maskPhone } from "@/lib/phone-mask";
 import { reservationSchema, type ReservationFormValues } from "@/lib/validation";
-import { useReservationStatus } from "@/hooks/useReservations";
+import { useReservationStatusByPeriod } from "@/hooks/useReservations";
 
 const ReservationForm = () => {
   const navigate = useNavigate();
@@ -48,7 +48,7 @@ const ReservationForm = () => {
   const phone = watch("phone");
   const periodo = watch("periodo");
 
-  const { data: status, isFetching: statusLoading } = useReservationStatus(date);
+  const { data: status, isFetching: statusLoading } = useReservationStatusByPeriod(date);
 
   const onSubmit = async (values: ReservationFormValues) => {
     setIsSubmitting(true);
@@ -64,15 +64,19 @@ const ReservationForm = () => {
         return;
       }
 
-      // Verificação extra de capacidade
+      // Verificação extra de capacidade — POR PERÍODO
       // @ts-ignore
-      const { data: statusData } = await supabase.rpc("get_reservations_status", {
+      const { data: statusData } = await supabase.rpc("get_reservations_status_by_period", {
         target_date: values.date,
       });
       const row = (statusData as any[])?.[0];
-      const seatsRemainingCheck = row?.seats_remaining ?? 110;
+      const remainingForPeriodo =
+        values.periodo === "tarde"
+          ? row?.seats_remaining_tarde ?? 110
+          : row?.seats_remaining_noite ?? 110;
+      const remainingTotal = row?.seats_remaining_total ?? 110;
 
-      if (seatsRemainingCheck <= 0) {
+      if (remainingTotal <= 0) {
         toast({
           title: "Sem lugares disponíveis",
           description:
@@ -81,10 +85,10 @@ const ReservationForm = () => {
         });
         return;
       }
-      if (values.guests > seatsRemainingCheck) {
+      if (values.guests > remainingForPeriodo) {
         toast({
-          title: "Lugares insuficientes",
-          description: `Restam apenas ${seatsRemainingCheck} lugares nesta data.`,
+          title: "Lugares insuficientes neste período",
+          description: `Restam apenas ${remainingForPeriodo} lugares no período da ${values.periodo}.`,
           variant: "destructive",
         });
         return;
@@ -133,9 +137,12 @@ const ReservationForm = () => {
   };
 
   const today = new Date().toISOString().split("T")[0];
-  const seatsBooked = status?.seatsBooked ?? 0;
-  const seatsRemaining = status?.seatsRemaining ?? 110;
-  const dayFull = !!status && seatsRemaining === 0;
+  const tardeRemaining = status?.tarde.remaining ?? 110;
+  const noiteRemaining = status?.noite.remaining ?? 110;
+  const totalRemaining = status?.total.remaining ?? 110;
+  const dayFull = !!status && totalRemaining === 0;
+  const tardeFull = !!status && tardeRemaining === 0;
+  const noiteFull = !!status && noiteRemaining === 0;
 
   return (
     <Card className="w-full max-w-2xl mx-auto bg-gradient-elegant border-border/50 backdrop-blur-sm shadow-elegant">
@@ -255,20 +262,37 @@ const ReservationForm = () => {
               <p className="text-sm text-destructive">{errors.date.message}</p>
             )}
             {date && (
-              <div className="space-y-1">
+              <div className="space-y-2">
                 {statusLoading ? (
-                  <Skeleton className="h-4 w-56" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Skeleton className="h-14 w-full" />
+                    <Skeleton className="h-14 w-full" />
+                  </div>
                 ) : status ? (
-                  <p className="text-sm text-muted-foreground">
-                    Lugares reservados: {seatsBooked}/{status.capacity} • Restantes:{" "}
-                    <span className={dayFull ? "text-destructive font-medium" : ""}>
-                      {seatsRemaining}
-                    </span>
-                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className={`rounded-md border p-2 text-xs ${tardeFull ? "border-destructive/50 bg-destructive/5" : "border-border/30 bg-muted/20"}`}>
+                      <div className="font-medium text-foreground">Tarde — 13:00</div>
+                      <div className="text-muted-foreground">
+                        {tardeFull ? (
+                          <span className="text-destructive font-medium">Lotado</span>
+                        ) : (
+                          <>Restam <span className="text-foreground font-medium">{tardeRemaining}</span> lugares</>
+                        )}
+                      </div>
+                    </div>
+                    <div className={`rounded-md border p-2 text-xs ${noiteFull ? "border-destructive/50 bg-destructive/5" : "border-border/30 bg-muted/20"}`}>
+                      <div className="font-medium text-foreground">Noite — 19:00</div>
+                      <div className="text-muted-foreground">
+                        {noiteFull ? (
+                          <span className="text-destructive font-medium">Lotado</span>
+                        ) : (
+                          <>Restam <span className="text-foreground font-medium">{noiteRemaining}</span> lugares</>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Disponibilidade: 110 lugares
-                  </p>
+                  <p className="text-sm text-muted-foreground">Disponibilidade: 110 lugares</p>
                 )}
                 {dayFull && (
                   <p className="text-sm text-primary">
@@ -296,8 +320,12 @@ const ReservationForm = () => {
               className="flex h-10 w-full rounded-md border border-border/30 bg-input px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 focus:border-primary/50 transition-colors"
             >
               <option value="">Selecione o período</option>
-              <option value="tarde">Tarde - 13:00</option>
-              <option value="noite">Noite - 19:00</option>
+              <option value="tarde" disabled={tardeFull}>
+                Tarde - 13:00 {tardeFull ? "(Lotado)" : ""}
+              </option>
+              <option value="noite" disabled={noiteFull}>
+                Noite - 19:00 {noiteFull ? "(Lotado)" : ""}
+              </option>
             </select>
             {errors.periodo && (
               <p className="text-sm text-destructive">{errors.periodo.message}</p>
