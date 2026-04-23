@@ -40,6 +40,7 @@ export const reservationAdminSchema = reservationSchema.extend({
     .int()
     .min(1, "Mínimo 1 pessoa")
     .max(110, "Máximo 110 pessoas"),
+  status: z.enum(["pending", "confirmed", "cancelled"]).optional(),
 });
 
 export type ReservationAdminValues = z.infer<typeof reservationAdminSchema>;

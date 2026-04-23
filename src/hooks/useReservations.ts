@@ -6,6 +6,8 @@ import {
 } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+export type ReservationStatus = "pending" | "confirmed" | "cancelled";
+
 export interface Reservation {
   id: string;
   name: string;
@@ -14,10 +16,11 @@ export interface Reservation {
   guests: number;
   date: string;
   periodo: string;
+  status: ReservationStatus;
   created_at: string;
 }
 
-export interface ReservationStatus {
+export interface ReservationCapacity {
   seatsBooked: number;
   seatsRemaining: number;
   capacity: number;
@@ -30,7 +33,9 @@ export interface ReservationStatusByPeriod {
   noite: { booked: number; remaining: number };
 }
 
-export type ReservationInput = Omit<Reservation, "id" | "created_at">;
+export type ReservationInput = Omit<Reservation, "id" | "created_at" | "status"> & {
+  status?: ReservationStatus;
+};
 
 const RESERVATIONS_KEY = ["reservations"] as const;
 
