@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { sendReservationWebhook } from "@/lib/webhook";
 
 export type ReservationStatus = "pending" | "confirmed" | "cancelled";
 
@@ -151,6 +152,13 @@ export const useCreateReservation = () => {
         .select()
         .single();
       if (error) throw error;
+
+      // Disparo do Webhook (Fire-and-Forget)
+      sendReservationWebhook({
+        ...data,
+        source: "admin_panel"
+      });
+
       return data;
     },
     onSuccess: () => {

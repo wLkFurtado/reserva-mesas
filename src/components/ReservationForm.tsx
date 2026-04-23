@@ -21,6 +21,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { maskPhone } from "@/lib/phone-mask";
 import { reservationSchema, type ReservationFormValues } from "@/lib/validation";
 import { useReservationStatusByPeriod } from "@/hooks/useReservations";
+import { sendReservationWebhook } from "@/lib/webhook";
 
 const ReservationForm = () => {
   const navigate = useNavigate();
@@ -126,6 +127,15 @@ const ReservationForm = () => {
         }
         return;
       }
+
+      // ----------------------------------------------------
+      // Disparo do Webhook (Fire-and-Forget)
+      // ----------------------------------------------------
+      sendReservationWebhook({
+        ...payload,
+        source: "public_form",
+        created_at: new Date().toISOString()
+      });
 
       const params = new URLSearchParams({
         name: values.name,
