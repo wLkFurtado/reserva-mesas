@@ -244,7 +244,7 @@ const AdminDashboard = () => {
   };
 
   // Filter reservations
-  const filteredReservations = reservations.filter((reservation) => {
+  const filteredReservations = useMemo(() => reservations.filter((reservation) => {
     const matchesSearch =
       searchTerm === "" ||
       reservation.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -287,8 +287,46 @@ const AdminDashboard = () => {
         ? reservation.guests >= 6
         : reservation.guests.toString() === selectedGuests);
 
-    return matchesSearch && matchesDate && matchesPeriodo && matchesGuests;
-  });
+    const matchesStatus =
+      !selectedStatus || selectedStatus === "" || (reservation.status ?? "pending") === selectedStatus;
+
+    return matchesSearch && matchesDate && matchesPeriodo && matchesGuests && matchesStatus;
+  }), [reservations, searchTerm, selectedDate, displayDate, selectedPeriodo, selectedGuests, selectedStatus]);
+
+  // Sort
+  const sortedReservations = useMemo(() => {
+    const arr = [...filteredReservations];
+    arr.sort((a, b) => {
+      let av: any;
+      let bv: any;
+      switch (sortKey) {
+        case "name":
+          av = a.name.toLowerCase(); bv = b.name.toLowerCase(); break;
+        case "guests":
+          av = a.guests; bv = b.guests; break;
+        case "periodo":
+          av = a.periodo; bv = b.periodo; break;
+        case "status":
+          av = a.status ?? "pending"; bv = b.status ?? "pending"; break;
+        case "created_at":
+          av = a.created_at; bv = b.created_at; break;
+        case "date":
+        default:
+          av = a.date; bv = b.date; break;
+      }
+      if (av < bv) return sortDir === "asc" ? -1 : 1;
+      if (av > bv) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+    return arr;
+  }, [filteredReservations, sortKey, sortDir]);
+
+  // Pagination
+  const totalPages = Math.max(1, Math.ceil(sortedReservations.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
+  const paginatedReservations = sortedReservations.slice(pageStart, pageStart + PAGE_SIZE);
+
 
   // Quick date filter functions
   const setQuickDateFilter = (type: "today" | "tomorrow" | "week" | "thisWeek" | "next7Days") => {
