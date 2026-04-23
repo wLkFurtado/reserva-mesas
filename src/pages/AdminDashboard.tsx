@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,6 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar, Users, Plus, Search, Trash2, Edit, Phone, Mail, LogOut, User, CalendarIcon } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { AdminAuth } from "@/components/AdminAuth";
 import { format } from "date-fns";
@@ -20,17 +19,15 @@ import {
   todayLocalISO,
 } from "@/lib/date-utils";
 import { maskPhone } from "@/lib/phone-mask";
+import {
+  useReservations,
+  useCreateReservation,
+  useUpdateReservation,
+  useDeleteReservation,
+  type Reservation,
+} from "@/hooks/useReservations";
+import { reservationAdminSchema } from "@/lib/validation";
 
-interface Reservation {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  guests: number;
-  date: string;
-  periodo: string;
-  created_at: string;
-}
 
 const AdminDashboard = () => {
   const { user, session, loading: authLoading, isAdmin, signOut } = useAuth();
