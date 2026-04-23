@@ -779,6 +779,19 @@ const AdminDashboard = () => {
                         <option value="noite">Noite</option>
                       </select>
                     </div>
+                    <div>
+                      <Label htmlFor="form-status">Status</Label>
+                      <select
+                        id="form-status"
+                        value={formData.status}
+                        onChange={(e) => setFormData({ ...formData, status: e.target.value as ReservationStatus })}
+                        className="w-full px-3 py-2 border border-input bg-background rounded-md"
+                      >
+                        <option value="pending">Pendente</option>
+                        <option value="confirmed">Confirmada</option>
+                        <option value="cancelled">Cancelada</option>
+                      </select>
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -820,76 +833,122 @@ const AdminDashboard = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredReservations.map((reservation) => (
-                  <Card
-                    key={reservation.id}
-                    className="hover:shadow-lg transition-all duration-200 border-l-4 border-l-primary/20 hover:border-l-primary"
-                  >
-                    <CardContent className="p-6">
-                      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-                        <div className="flex-1 space-y-4">
-                          {/* Main Info */}
-                          <div>
-                            <h3 className="font-bold text-xl text-foreground">{reservation.name}</h3>
-                            <p className="text-xl italic text-muted-foreground">{reservation.phone}</p>
-                          </div>
+                <div className="rounded-md border overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>
+                          <button onClick={() => toggleSort("name")} className="flex items-center font-medium">
+                            Cliente <SortIcon k="name" />
+                          </button>
+                        </TableHead>
+                        <TableHead>
+                          <button onClick={() => toggleSort("date")} className="flex items-center font-medium">
+                            Data <SortIcon k="date" />
+                          </button>
+                        </TableHead>
+                        <TableHead>
+                          <button onClick={() => toggleSort("periodo")} className="flex items-center font-medium">
+                            Período <SortIcon k="periodo" />
+                          </button>
+                        </TableHead>
+                        <TableHead>
+                          <button onClick={() => toggleSort("guests")} className="flex items-center font-medium">
+                            Pessoas <SortIcon k="guests" />
+                          </button>
+                        </TableHead>
+                        <TableHead>
+                          <button onClick={() => toggleSort("status")} className="flex items-center font-medium">
+                            Status <SortIcon k="status" />
+                          </button>
+                        </TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedReservations.map((reservation) => {
+                        const status = (reservation.status ?? "pending") as ReservationStatus;
+                        const meta = statusMeta[status];
+                        return (
+                          <TableRow key={reservation.id}>
+                            <TableCell>
+                              <div className="font-medium">{reservation.name}</div>
+                              <div className="text-xs text-muted-foreground">{reservation.email}</div>
+                              <div className="text-xs text-muted-foreground">{reservation.phone}</div>
+                            </TableCell>
+                            <TableCell>{format(parseLocalDate(reservation.date), "dd/MM/yyyy")}</TableCell>
+                            <TableCell>{reservation.periodo === "tarde" ? "Tarde" : "Noite"}</TableCell>
+                            <TableCell>{reservation.guests}</TableCell>
+                            <TableCell>
+                              <Select
+                                value={status}
+                                onValueChange={(v) => updateStatus(reservation.id, v as ReservationStatus)}
+                              >
+                                <SelectTrigger className="h-8 w-[140px]">
+                                  <SelectValue>
+                                    <Badge variant={meta.variant}>{meta.label}</Badge>
+                                  </SelectValue>
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="pending">Pendente</SelectItem>
+                                  <SelectItem value="confirmed">Confirmada</SelectItem>
+                                  <SelectItem value="cancelled">Cancelada</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => startEdit(reservation)}
+                                  className="hover:bg-primary hover:text-primary-foreground"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => deleteReservation(reservation.id)}
+                                  className="hover:bg-destructive hover:text-destructive-foreground"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
 
-                          {/* Highlighted Reservation Details */}
-                          <div className="flex flex-wrap gap-3 mb-3">
-                            <Badge variant="default" className="px-3 py-1 text-sm font-medium">
-                              <Calendar className="w-4 h-4 mr-2" />
-                              {format(parseLocalDate(reservation.date), "dd/MM/yyyy")}
-                            </Badge>
-                            <Badge variant="secondary" className="px-3 py-1 text-sm font-medium">
-                              <Users className="w-4 h-4 mr-2" />
-                              {reservation.guests} {reservation.guests === 1 ? "pessoa" : "pessoas"}
-                            </Badge>
-                            <Badge
-                              variant={reservation.periodo === "tarde" ? "outline" : "secondary"}
-                              className="px-3 py-1 text-sm font-medium"
-                            >
-                              {reservation.periodo === "tarde" ? "Tarde" : "Noite"}
-                            </Badge>
-                          </div>
-
-                          {/* Secondary Info */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-2">
-                              <Mail className="w-4 h-4" />
-                              <span className="truncate">{reservation.email}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Phone className="w-4 h-4" />
-                              <span>{reservation.phone}</span>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex gap-2 lg:flex-col">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => startEdit(reservation)}
-                            className="flex items-center gap-2 hover:bg-primary hover:text-primary-foreground"
-                          >
-                            <Edit className="w-4 h-4" />
-                            <span className="hidden sm:inline">Editar</span>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => deleteReservation(reservation.id)}
-                            className="flex items-center gap-2 hover:bg-destructive hover:text-destructive-foreground"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                            <span className="hidden sm:inline">Excluir</span>
-                          </Button>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                {/* Pagination */}
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <div className="text-sm text-muted-foreground">
+                    Página {currentPage} de {totalPages} · {sortedReservations.length} reserva(s)
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                      disabled={currentPage <= 1}
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                      Anterior
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                      disabled={currentPage >= totalPages}
+                    >
+                      Próxima
+                      <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
               </div>
             )}
           </CardContent>
