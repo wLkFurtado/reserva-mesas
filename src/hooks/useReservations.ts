@@ -6,6 +6,8 @@ import {
 } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
+export type ReservationStatus = "pending" | "confirmed" | "cancelled";
+
 export interface Reservation {
   id: string;
   name: string;
@@ -14,6 +16,7 @@ export interface Reservation {
   guests: number;
   date: string;
   periodo: string;
+  status: ReservationStatus;
   created_at: string;
 }
 
