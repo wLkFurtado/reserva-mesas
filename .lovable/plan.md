@@ -1,60 +1,68 @@
 
 
-# Plano de melhorias do sistema de reservas Tróia
+# Otimização do Painel Admin
 
-Aprovado pelo usuário, sem confirmação por e-mail ao cliente. Execução em 5 fases.
+Análise do `AdminDashboard.tsx` atual (961 linhas, monolítico) revelou pontos de UX, performance e organização que dá pra atacar. Proponho **4 frentes de melhoria** ordenadas por impacto. Você escolhe quais entrar.
 
-## Fase 1 — Segurança (urgente)
+## Frente 1 — UX e densidade visual (alto impacto, baixo risco)
 
-- Apagar `src/integrations/supabase/admin-client.ts`, `src/lib/supabase-admin.ts`, `SOLUCAO_RLS.md` e a variável `VITE_SUPABASE_SERVICE_ROLE_KEY` do `.env` / `.env.example`.
-- Migration SQL:
-  - Criar enum `app_role` (`admin`, `user`).
-  - Criar tabela `public.user_roles (id, user_id, role, unique(user_id, role))` com RLS habilitado.
-  - Criar função `public.has_role(_user_id uuid, _role app_role)` SECURITY DEFINER.
-  - Inserir `('00000000-0000-0000-0000-000000000001', 'admin')` em `user_roles`.
-  - Reescrever policies de `reservations`: INSERT público permitido; SELECT/UPDATE/DELETE só com `has_role(auth.uid(),'admin')`.
-  - Remover dependência de `profiles.role` nas policies.
-- Atualizar `useAuth.tsx` para checar admin via `user_roles` (consulta `has_role` ou select em `user_roles`).
-- Avisar o usuário para **rotacionar a service_role key** no painel Supabase após o deploy.
+**Problema:** estatísticas pobres (só 3 cards), filtros ocupam muito espaço, tabela perde contexto de capacidade, emoji "📋" no empty state contradiz a identidade clean.
 
-## Fase 2 — Bugs e limpeza
+**Mudanças:**
+- **KPIs mais ricos:** trocar os 3 cards atuais por 5 cards: Reservas hoje, Pessoas hoje, **Ocupação hoje (X/110 + barra de progresso)**, Próximos 7 dias, Pendentes aguardando confirmação.
+- **Indicador de capacidade do dia filtrado:** quando há filtro de data específica, mostrar barra visual `Tarde XX/110 · Noite XX/110` no topo da tabela (consome `get_reservations_status_by_period`).
+- **Empty state limpo:** remover emoji, usar ícone `CalendarX` da lucide no estilo dark/gold.
+- **Filtros colapsáveis:** envolver bloco de filtros num `Collapsible` (aberto por padrão no desktop, fechado no mobile) pra liberar espaço vertical.
+- **Substituir `<select>` nativos** por `Select` shadcn (consistência visual com o resto).
 
-- Criar `src/lib/date-utils.ts` com `parseLocalDate`, `toLocalISO`, `formatDateToDisplay`, `formatDateToISO`. Importar em `AdminDashboard.tsx` e `ReservationForm.tsx`. Resolve o erro `Cannot access 'parseLocalDate' before initialization`.
-- Substituir os `<Input type="text">` de data no admin (filtro + formulário) por `Calendar` + `Popover` (DatePicker visual).
-- Adicionar `min={today}` no formulário admin.
-- Aplicar máscara `(XX) XXXXX-XXXX` no campo telefone (público + admin) via util simples.
-- Regenerar tipos do Supabase para remover os `@ts-ignore` em torno de `get_reservations_status`.
+## Frente 2 — Tabela e ações (médio impacto)
 
-## Fase 3 — React Query + qualidade
+**Problema:** linhas densas demais, ações destrutivas usam `confirm()` nativo, sem ações em lote, sem visualização detalhada.
 
-- Migrar `fetchReservations` (admin) e `get_reservations_status` (formulário) para `useQuery`.
-- Mutations (`create`, `update`, `delete` reserva) via `useMutation` com `invalidateQueries`.
-- Adicionar canal Realtime do Supabase na lista do admin: ao receber `INSERT/UPDATE/DELETE` em `reservations`, invalida a query.
-- Validação dos formulários com **Zod + react-hook-form** (substitui a cascata `if + toast`).
+**Mudanças:**
+- **AlertDialog** no lugar de `window.confirm` para exclusão (estilo consistente).
+- **Drawer/Sheet de detalhes:** clicar na linha abre painel lateral com info completa + histórico (created_at formatado, telefone clicável `tel:`, email clicável `mailto:`, botão "Copiar contato").
+- **Seleção múltipla** com checkbox por linha → barra flutuante com ações em lote (Confirmar todas / Cancelar todas / Exportar selecionadas).
+- **Badge de período** com cores (Tarde = âmbar suave, Noite = índigo suave) pra escaneamento rápido.
+- **Highlight de hoje:** linhas com `date === hoje` recebem leve destaque (border-l dourado).
+- **Coluna "Criada em"** opcional (toggle de colunas via dropdown).
 
-## Fase 4 — UX do formulário público
+## Frente 3 — Visão Calendário (médio impacto, novo recurso)
 
-- Skeleton de carregamento da disponibilidade (substitui texto "Carregando...").
-- Mostrar disponibilidade **por período** (tarde/noite) em vez de só total do dia. Requer ajustar `get_reservations_status` para retornar breakdown por período (ou nova função `get_reservations_status_by_period`).
-- Marcar opções "Tarde" / "Noite" como desabilitadas quando lotadas.
-- Manter botão `disabled` durante o `navigate` pós-submit.
+**Problema:** painel só tem visão lista. Ver volume mensal exige filtrar dia a dia.
 
-## Fase 5 — Painel admin
+**Mudanças:**
+- Adicionar **Tabs** no topo: `Lista` | `Calendário`.
+- View Calendário: grid mensal com cada dia mostrando `total/110` e mini-barra de ocupação. Cores: verde (<50%), âmbar (50-85%), vermelho (>85%).
+- Clicar num dia → aplica filtro de data e troca pra Lista.
+- Componente novo: `src/components/admin/ReservationCalendar.tsx`.
 
-- Campo `status` em `reservations` (`confirmada` default, `cancelada`, `compareceu`, `no_show`) + UI para alterar.
-- Botão **Exportar CSV** das reservas filtradas.
-- **Visão calendário mensal** (heatmap por volume) usando o `Calendar` shadcn com modificadores customizados.
-- Ordenação clicável nas colunas (data, nome, pessoas).
-- Paginação server-side (page size 50) usando `range()` do Supabase.
+## Frente 4 — Refatoração e qualidade de código (técnico)
 
-## Detalhes técnicos relevantes
+**Problema:** `AdminDashboard.tsx` tem 961 linhas, mistura layout, lógica de filtro, formulário e tabela.
 
-- Arquivos novos: `src/lib/date-utils.ts`, `src/lib/phone-mask.ts`, `src/hooks/useReservations.ts` (React Query), `src/components/admin/ReservationCalendar.tsx`, `src/components/admin/ExportCsvButton.tsx`.
-- Migrations novas: `user_roles` + RLS, `reservations.status`, possível ajuste em `get_reservations_status`.
-- Sem novas dependências externas (Zod, React Query, date-fns já estão instalados).
-- Edge functions: nenhuma nesta rodada (sem e-mail/lembretes automáticos).
+**Mudanças:**
+- Quebrar em sub-componentes em `src/components/admin/`:
+  - `AdminHeader.tsx` (header + logout)
+  - `AdminStatsCards.tsx` (KPIs)
+  - `AdminFilters.tsx` (busca + filtros)
+  - `AdminReservationTable.tsx` (tabela + paginação)
+  - `AdminReservationForm.tsx` (form de criar/editar — pode virar `Dialog` em vez de card inline)
+  - `AdminReservationDetails.tsx` (Sheet de detalhes)
+- Hook `useAdminFilters.ts` centraliza estado dos filtros + URL sync (`?date=...&status=...`) → filtros persistem ao recarregar e podem ser compartilhados via link.
+- Form de criar/editar vira **Dialog modal** em vez de card empurrando a tabela pra baixo.
 
-## Ordem de execução sugerida
+## Detalhes técnicos
 
-1 → 2 → 3 → 4 → 5. Cada fase é independente e entregável separadamente. Posso pausar ao fim de qualquer fase para você validar antes da próxima.
+- Sem novas dependências (`Collapsible`, `Sheet`, `AlertDialog`, `Tabs`, `Checkbox`, `Progress` já existem em `src/components/ui/`).
+- Frente 1 usa `useReservationStatusByPeriod` (já existe em `useReservations.ts`).
+- Frente 3 calcula ocupação mensal client-side a partir de `reservations` já carregadas — sem nova RPC necessária.
+- URL sync na Frente 4 via `useSearchParams` do `react-router-dom`.
+- Mantém Realtime e React Query existentes intactos.
+
+## Ordem sugerida
+
+**1 → 2 → 4 → 3** (UX primeiro pra ganho visível, refatoração antes do novo recurso pesado).
+
+Cada frente é independente e entregável separadamente. Me diga **quais frentes quer** (ou todas) e eu implemento.
 
