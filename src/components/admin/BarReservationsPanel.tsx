@@ -4,7 +4,6 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -14,6 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { CalendarX, Trash2, Download, Plus } from "lucide-react";
 import { AdminBarReservationForm } from "./AdminBarReservationForm";
+import { BarAdminFilters, useBarAdminFilters } from "./BarAdminFilters";
 import { format } from "date-fns";
 import { parseLocalDate } from "@/lib/date-utils";
 import { toast } from "@/hooks/use-toast";
@@ -51,25 +51,14 @@ export const BarReservationsPanel = ({ bar, showBarLabel, data, loading, hideFil
   const update = useUpdateBarReservation(bar);
   const del = useDeleteBarReservation(bar);
 
-  const [search, setSearch] = useState("");
-  const [dateFilter, setDateFilter] = useState("");
-  const [localFilter, setLocalFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
+  const filters = useBarAdminFilters();
   const [confirmDelete, setConfirmDelete] = useState<BarReservation | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
 
-  const filtered = useMemo(() => {
-    return reservations.filter((r) => {
-      if (search) {
-        const t = search.toLowerCase();
-        if (!r.name.toLowerCase().includes(t) && !r.email.toLowerCase().includes(t) && !r.phone.includes(search)) return false;
-      }
-      if (dateFilter && r.date !== dateFilter) return false;
-      if (localFilter && r.local !== localFilter) return false;
-      if (statusFilter && (r.status ?? "pending") !== statusFilter) return false;
-      return true;
-    });
-  }, [reservations, search, dateFilter, localFilter, statusFilter]);
+  const filtered = useMemo(
+    () => reservations.filter(filters.matches),
+    [reservations, filters.matches]
+  );
 
   const handleStatus = async (id: string, status: BarReservationStatus) => {
     try {
@@ -121,34 +110,23 @@ export const BarReservationsPanel = ({ bar, showBarLabel, data, loading, hideFil
   return (
     <div className="space-y-4">
       {!hideFilters && (
-        <div className="flex flex-wrap gap-2 items-end">
-          <div className="flex-1 min-w-[200px]">
-            <Input placeholder="Buscar por nome, email ou telefone..." value={search} onChange={(e) => setSearch(e.target.value)} />
+        <>
+          <div className="flex justify-end gap-2 flex-wrap">
+            <Button variant="outline" onClick={exportCsv} disabled={filtered.length === 0}>
+              <Download className="w-4 h-4 mr-2" /> CSV
+            </Button>
+            <Button onClick={() => setCreateOpen(true)} className="bg-primary hover:bg-primary/90">
+              <Plus className="w-4 h-4 mr-2" /> Nova Reserva
+            </Button>
           </div>
-          <Input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="w-auto" />
-          <Select value={localFilter || "all"} onValueChange={(v) => setLocalFilter(v === "all" ? "" : v)}>
-            <SelectTrigger className="w-[200px]"><SelectValue placeholder="Local" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos os locais</SelectItem>
-              {cfg.locais.map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-            </SelectContent>
-          </Select>
-          <Select value={statusFilter || "all"} onValueChange={(v) => setStatusFilter(v === "all" ? "" : v)}>
-            <SelectTrigger className="w-[160px]"><SelectValue placeholder="Status" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos status</SelectItem>
-              <SelectItem value="pending">Pendente</SelectItem>
-              <SelectItem value="confirmed">Confirmada</SelectItem>
-              <SelectItem value="cancelled">Cancelada</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" onClick={exportCsv} disabled={filtered.length === 0}>
-            <Download className="w-4 h-4 mr-2" /> CSV
-          </Button>
-          <Button onClick={() => setCreateOpen(true)} className="bg-primary hover:bg-primary/90">
-            <Plus className="w-4 h-4 mr-2" /> Nova Reserva
-          </Button>
-        </div>
+          <BarAdminFilters
+            filters={filters}
+            locais={cfg.locais}
+            onRefresh={() => own.refetch()}
+            resultCount={filtered.length}
+            totalCount={reservations.length}
+          />
+        </>
       )}
 
       {filtered.length === 0 ? (
