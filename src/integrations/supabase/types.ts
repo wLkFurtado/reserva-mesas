@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      admins: {
+        Row: {
+          criado_em: string | null
+          email: string
+          id: string
+        }
+        Insert: {
+          criado_em?: string | null
+          email: string
+          id?: string
+        }
+        Update: {
+          criado_em?: string | null
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
       boteco_saopedro: {
         Row: {
           aniversario: string | null
@@ -41,6 +59,102 @@ export type Database = {
           ultima_visita?: string | null
           valor_ultima_compra?: number | null
           whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      ganhadores: {
+        Row: {
+          anunciado_em: string | null
+          id: string
+          jogo_id: string | null
+          observacao: string | null
+          participante_id: string | null
+          premio: string
+          rodada: string | null
+        }
+        Insert: {
+          anunciado_em?: string | null
+          id?: string
+          jogo_id?: string | null
+          observacao?: string | null
+          participante_id?: string | null
+          premio: string
+          rodada?: string | null
+        }
+        Update: {
+          anunciado_em?: string | null
+          id?: string
+          jogo_id?: string | null
+          observacao?: string | null
+          participante_id?: string | null
+          premio?: string
+          rodada?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ganhadores_jogo_id_fkey"
+            columns: ["jogo_id"]
+            isOneToOne: false
+            referencedRelation: "jogos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ganhadores_participante_id_fkey"
+            columns: ["participante_id"]
+            isOneToOne: false
+            referencedRelation: "participantes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jogos: {
+        Row: {
+          bandeira_casa: string | null
+          bandeira_visitante: string | null
+          cidade: string | null
+          criado_em: string | null
+          data_hora: string
+          estadio: string | null
+          finalizado: boolean | null
+          gols_casa: number | null
+          gols_visitante: number | null
+          grupo: string | null
+          id: string
+          rodada: string
+          time_casa: string
+          time_visitante: string
+        }
+        Insert: {
+          bandeira_casa?: string | null
+          bandeira_visitante?: string | null
+          cidade?: string | null
+          criado_em?: string | null
+          data_hora: string
+          estadio?: string | null
+          finalizado?: boolean | null
+          gols_casa?: number | null
+          gols_visitante?: number | null
+          grupo?: string | null
+          id?: string
+          rodada: string
+          time_casa: string
+          time_visitante: string
+        }
+        Update: {
+          bandeira_casa?: string | null
+          bandeira_visitante?: string | null
+          cidade?: string | null
+          criado_em?: string | null
+          data_hora?: string
+          estadio?: string | null
+          finalizado?: boolean | null
+          gols_casa?: number | null
+          gols_visitante?: number | null
+          grupo?: string | null
+          id?: string
+          rodada?: string
+          time_casa?: string
+          time_visitante?: string
         }
         Relationships: []
       }
@@ -211,6 +325,119 @@ export type Database = {
         }
         Relationships: []
       }
+      palpites: {
+        Row: {
+          atualizado_em: string | null
+          criado_em: string | null
+          id: string
+          jogo_id: string | null
+          palpite_casa: number
+          palpite_visitante: number
+          participante_id: string | null
+          pontos_ganhos: number | null
+        }
+        Insert: {
+          atualizado_em?: string | null
+          criado_em?: string | null
+          id?: string
+          jogo_id?: string | null
+          palpite_casa: number
+          palpite_visitante: number
+          participante_id?: string | null
+          pontos_ganhos?: number | null
+        }
+        Update: {
+          atualizado_em?: string | null
+          criado_em?: string | null
+          id?: string
+          jogo_id?: string | null
+          palpite_casa?: number
+          palpite_visitante?: number
+          participante_id?: string | null
+          pontos_ganhos?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "palpites_jogo_id_fkey"
+            columns: ["jogo_id"]
+            isOneToOne: false
+            referencedRelation: "jogos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "palpites_participante_id_fkey"
+            columns: ["participante_id"]
+            isOneToOne: false
+            referencedRelation: "participantes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      participantes: {
+        Row: {
+          criado_em: string | null
+          data_nascimento: string
+          email: string
+          id: string
+          nome: string
+          pontos_total: number | null
+          telefone: string
+        }
+        Insert: {
+          criado_em?: string | null
+          data_nascimento: string
+          email: string
+          id?: string
+          nome: string
+          pontos_total?: number | null
+          telefone: string
+        }
+        Update: {
+          criado_em?: string | null
+          data_nascimento?: string
+          email?: string
+          id?: string
+          nome?: string
+          pontos_total?: number | null
+          telefone?: string
+        }
+        Relationships: []
+      }
+      reservation_logs: {
+        Row: {
+          changed_at: string
+          id: string
+          new_status: string
+          note: string | null
+          old_status: string | null
+          reservation_id: string
+        }
+        Insert: {
+          changed_at?: string
+          id?: string
+          new_status: string
+          note?: string | null
+          old_status?: string | null
+          reservation_id: string
+        }
+        Update: {
+          changed_at?: string
+          id?: string
+          new_status?: string
+          note?: string | null
+          old_status?: string | null
+          reservation_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reservation_logs_reservation_id_fkey"
+            columns: ["reservation_id"]
+            isOneToOne: false
+            referencedRelation: "reservations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reservations: {
         Row: {
           created_at: string
@@ -218,6 +445,7 @@ export type Database = {
           email: string
           guests: number
           id: string
+          message: string | null
           name: string
           periodo: string
           phone: string
@@ -229,6 +457,7 @@ export type Database = {
           email: string
           guests: number
           id?: string
+          message?: string | null
           name: string
           periodo: string
           phone: string
@@ -240,6 +469,7 @@ export type Database = {
           email?: string
           guests?: number
           id?: string
+          message?: string | null
           name?: string
           periodo?: string
           phone?: string
@@ -363,6 +593,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calcular_pontos_jogo: { Args: { p_jogo_id: string }; Returns: undefined }
       get_reservations_status_by_period: {
         Args: { target_date: string }
         Returns: {
