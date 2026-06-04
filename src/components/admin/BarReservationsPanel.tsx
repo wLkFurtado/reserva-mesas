@@ -12,7 +12,8 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { CalendarX, Trash2, Download } from "lucide-react";
+import { CalendarX, Trash2, Download, Plus } from "lucide-react";
+import { AdminBarReservationForm } from "./AdminBarReservationForm";
 import { format } from "date-fns";
 import { parseLocalDate } from "@/lib/date-utils";
 import { toast } from "@/hooks/use-toast";
@@ -55,6 +56,7 @@ export const BarReservationsPanel = ({ bar, showBarLabel, data, loading, hideFil
   const [localFilter, setLocalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<BarReservation | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const filtered = useMemo(() => {
     return reservations.filter((r) => {
@@ -143,6 +145,9 @@ export const BarReservationsPanel = ({ bar, showBarLabel, data, loading, hideFil
           <Button variant="outline" onClick={exportCsv} disabled={filtered.length === 0}>
             <Download className="w-4 h-4 mr-2" /> CSV
           </Button>
+          <Button onClick={() => setCreateOpen(true)} className="bg-primary hover:bg-primary/90">
+            <Plus className="w-4 h-4 mr-2" /> Nova Reserva
+          </Button>
         </div>
       )}
 
@@ -230,6 +235,8 @@ export const BarReservationsPanel = ({ bar, showBarLabel, data, loading, hideFil
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AdminBarReservationForm bar={bar} open={createOpen} onClose={() => setCreateOpen(false)} />
     </div>
   );
 };
