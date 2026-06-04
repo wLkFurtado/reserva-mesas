@@ -145,6 +145,9 @@ export const BarReservationsPanel = ({ bar, showBarLabel, data, loading, hideFil
           <Button variant="outline" onClick={exportCsv} disabled={filtered.length === 0}>
             <Download className="w-4 h-4 mr-2" /> CSV
           </Button>
+          <Button onClick={() => setCreateOpen(true)} className="bg-primary hover:bg-primary/90">
+            <Plus className="w-4 h-4 mr-2" /> Nova Reserva
+          </Button>
         </div>
       )}
 
