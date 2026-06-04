@@ -23,7 +23,7 @@ export const BARS: Record<BarId, BarConfig> = {
     name: "Boteco Seu Osmar — São Pedro",
     shortName: "São Pedro",
     table: "reservations_saopedro",
-    locais: ["Ao lado do Bar de Drinks"],
+    locais: ["Ao lado do Bar de Drinks", "Área Frontal", "Em frente à Área Kids"],
     publicPath: "/saopedro",
   },
 };
