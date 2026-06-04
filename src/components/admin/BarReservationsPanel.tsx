@@ -56,6 +56,7 @@ export const BarReservationsPanel = ({ bar, showBarLabel, data, loading, hideFil
   const [localFilter, setLocalFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<BarReservation | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const filtered = useMemo(() => {
     return reservations.filter((r) => {
