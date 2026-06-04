@@ -12,7 +12,8 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { CalendarX, Trash2, Download } from "lucide-react";
+import { CalendarX, Trash2, Download, Plus } from "lucide-react";
+import { AdminBarReservationForm } from "./AdminBarReservationForm";
 import { format } from "date-fns";
 import { parseLocalDate } from "@/lib/date-utils";
 import { toast } from "@/hooks/use-toast";
