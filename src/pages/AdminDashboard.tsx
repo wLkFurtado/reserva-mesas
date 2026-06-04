@@ -15,6 +15,8 @@ import { AdminReservationTable } from "@/components/admin/AdminReservationTable"
 import { AdminReservationForm } from "@/components/admin/AdminReservationForm";
 import { AdminReservationDetails } from "@/components/admin/AdminReservationDetails";
 import { ReservationCalendar } from "@/components/admin/ReservationCalendar";
+import { BarReservationsPanel } from "@/components/admin/BarReservationsPanel";
+import { AllBarsPanel } from "@/components/admin/AllBarsPanel";
 import { useAdminFilters } from "@/hooks/useAdminFilters";
 import {
   useReservations,
@@ -35,6 +37,7 @@ const AdminDashboard = () => {
   const updateMutation = useUpdateReservation();
   const deleteMutation = useDeleteReservation();
 
+  const [bar, setBar] = useState<"all" | "troia" | "cabofrio" | "saopedro">("all");
   const [tab, setTab] = useState<"list" | "calendar">("list");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Reservation | null>(null);
@@ -135,64 +138,73 @@ const AdminDashboard = () => {
 
         <Card>
           <CardHeader>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+            <div className="flex flex-col gap-3">
               <CardTitle>Reservas</CardTitle>
-              <div className="flex gap-2 flex-wrap">
-                <ExportCsvButton reservations={filtered} />
-                <Button onClick={openCreate} className="bg-primary hover:bg-primary/90">
-                  <Plus className="w-4 h-4 mr-2" /> Nova Reserva
-                </Button>
-              </div>
+              <Tabs value={bar} onValueChange={(v) => setBar(v as any)}>
+                <TabsList className="flex-wrap h-auto">
+                  <TabsTrigger value="all">Todos os bares</TabsTrigger>
+                  <TabsTrigger value="troia">Tróia</TabsTrigger>
+                  <TabsTrigger value="cabofrio">Cabo Frio</TabsTrigger>
+                  <TabsTrigger value="saopedro">São Pedro</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
-              <TabsList>
-                <TabsTrigger value="list" className="gap-2">
-                  <List className="h-4 w-4" /> Lista
-                </TabsTrigger>
-                <TabsTrigger value="calendar" className="gap-2">
-                  <CalendarDays className="h-4 w-4" /> Calendário
-                </TabsTrigger>
-              </TabsList>
+            {bar === "all" && <AllBarsPanel enabled={isAuthed} />}
 
-              <TabsContent value="list" className="space-y-4 mt-4">
-                <AdminFilters
-                  filters={filters}
-                  onRefresh={() => refetch()}
-                  resultCount={filtered.length}
-                  totalCount={reservations.length}
-                />
+            {bar === "troia" && (
+              <>
+                <div className="flex justify-end gap-2 flex-wrap">
+                  <ExportCsvButton reservations={filtered} />
+                  <Button onClick={openCreate} className="bg-primary hover:bg-primary/90">
+                    <Plus className="w-4 h-4 mr-2" /> Nova Reserva
+                  </Button>
+                </div>
+                <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
+                  <TabsList>
+                    <TabsTrigger value="list" className="gap-2"><List className="h-4 w-4" /> Lista</TabsTrigger>
+                    <TabsTrigger value="calendar" className="gap-2"><CalendarDays className="h-4 w-4" /> Calendário</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="list" className="space-y-4 mt-4">
+                    <AdminFilters
+                      filters={filters}
+                      onRefresh={() => refetch()}
+                      resultCount={filtered.length}
+                      totalCount={reservations.length}
+                    />
+                    {showCapacityBar && <AdminCapacityBar date={filters.state.date} />}
+                    <AdminReservationTable
+                      reservations={filtered}
+                      loading={loading}
+                      sortKey={filters.state.sortKey}
+                      sortDir={filters.state.sortDir}
+                      page={filters.state.page}
+                      onSort={(sortKey, sortDir) => filters.update({ sortKey, sortDir, page: 1 })}
+                      onPage={(page) => filters.update({ page })}
+                      onView={setViewing}
+                      onEdit={openEdit}
+                      onDelete={handleDelete}
+                      onUpdateStatus={handleUpdateStatus}
+                      onBulkStatus={handleBulkStatus}
+                      onCreate={openCreate}
+                    />
+                  </TabsContent>
+                  <TabsContent value="calendar" className="mt-4">
+                    <ReservationCalendar
+                      reservations={reservations}
+                      onSelectDate={(iso) => {
+                        filters.update({ date: iso, dateMode: "exact" });
+                        setTab("list");
+                      }}
+                    />
+                  </TabsContent>
+                </Tabs>
+              </>
+            )}
 
-                {showCapacityBar && <AdminCapacityBar date={filters.state.date} />}
-
-                <AdminReservationTable
-                  reservations={filtered}
-                  loading={loading}
-                  sortKey={filters.state.sortKey}
-                  sortDir={filters.state.sortDir}
-                  page={filters.state.page}
-                  onSort={(sortKey, sortDir) => filters.update({ sortKey, sortDir, page: 1 })}
-                  onPage={(page) => filters.update({ page })}
-                  onView={setViewing}
-                  onEdit={openEdit}
-                  onDelete={handleDelete}
-                  onUpdateStatus={handleUpdateStatus}
-                  onBulkStatus={handleBulkStatus}
-                  onCreate={openCreate}
-                />
-              </TabsContent>
-
-              <TabsContent value="calendar" className="mt-4">
-                <ReservationCalendar
-                  reservations={reservations}
-                  onSelectDate={(iso) => {
-                    filters.update({ date: iso, dateMode: "exact" });
-                    setTab("list");
-                  }}
-                />
-              </TabsContent>
-            </Tabs>
+            {bar === "cabofrio" && <BarReservationsPanel bar="cabofrio" />}
+            {bar === "saopedro" && <BarReservationsPanel bar="saopedro" />}
           </CardContent>
         </Card>
       </div>
