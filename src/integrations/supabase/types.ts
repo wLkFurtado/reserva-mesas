@@ -477,6 +477,84 @@ export type Database = {
         }
         Relationships: []
       }
+      reservations_cabofrio: {
+        Row: {
+          created_at: string
+          date: string
+          email: string
+          guests: number
+          id: string
+          local: string
+          message: string | null
+          name: string
+          phone: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          email: string
+          guests: number
+          id?: string
+          local: string
+          message?: string | null
+          name: string
+          phone: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          email?: string
+          guests?: number
+          id?: string
+          local?: string
+          message?: string | null
+          name?: string
+          phone?: string
+          status?: string
+        }
+        Relationships: []
+      }
+      reservations_saopedro: {
+        Row: {
+          created_at: string
+          date: string
+          email: string
+          guests: number
+          id: string
+          local: string
+          message: string | null
+          name: string
+          phone: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          email: string
+          guests: number
+          id?: string
+          local: string
+          message?: string | null
+          name: string
+          phone: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          email?: string
+          guests?: number
+          id?: string
+          local?: string
+          message?: string | null
+          name?: string
+          phone?: string
+          status?: string
+        }
+        Relationships: []
+      }
       troia_reservas: {
         Row: {
           criado_em: string | null
