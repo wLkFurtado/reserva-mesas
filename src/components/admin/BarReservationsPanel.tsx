@@ -4,6 +4,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -11,9 +12,10 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { CalendarX, Trash2, Download, Plus } from "lucide-react";
+import { CalendarX, Trash2, Download, Plus, List, CalendarDays } from "lucide-react";
 import { AdminBarReservationForm } from "./AdminBarReservationForm";
 import { BarAdminFilters, useBarAdminFilters } from "./BarAdminFilters";
+import { ReservationCalendar } from "./ReservationCalendar";
 import { format } from "date-fns";
 import { parseLocalDate } from "@/lib/date-utils";
 import { toast } from "@/hooks/use-toast";
