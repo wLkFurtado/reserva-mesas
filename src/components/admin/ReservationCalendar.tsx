@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { todayLocalISO, toLocalISO } from "@/lib/date-utils";
-import type { Reservation } from "@/hooks/useReservations";
 
 const DAILY_CAPACITY = 110;
 const MONTHS = [
@@ -12,8 +11,14 @@ const MONTHS = [
 ];
 const WEEKDAYS = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sáb", "Dom"];
 
+interface CalendarItem {
+  date: string;
+  guests: number;
+  status?: string | null;
+}
+
 interface Props {
-  reservations: Reservation[];
+  reservations: CalendarItem[];
   onSelectDate: (isoDate: string) => void;
 }
 
