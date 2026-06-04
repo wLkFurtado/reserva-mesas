@@ -15,6 +15,8 @@ import { AdminReservationTable } from "@/components/admin/AdminReservationTable"
 import { AdminReservationForm } from "@/components/admin/AdminReservationForm";
 import { AdminReservationDetails } from "@/components/admin/AdminReservationDetails";
 import { ReservationCalendar } from "@/components/admin/ReservationCalendar";
+import { BarReservationsPanel } from "@/components/admin/BarReservationsPanel";
+import { AllBarsPanel } from "@/components/admin/AllBarsPanel";
 import { useAdminFilters } from "@/hooks/useAdminFilters";
 import {
   useReservations,
@@ -35,6 +37,7 @@ const AdminDashboard = () => {
   const updateMutation = useUpdateReservation();
   const deleteMutation = useDeleteReservation();
 
+  const [bar, setBar] = useState<"all" | "troia" | "cabofrio" | "saopedro">("all");
   const [tab, setTab] = useState<"list" | "calendar">("list");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Reservation | null>(null);

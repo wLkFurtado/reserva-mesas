@@ -72,7 +72,7 @@ const BarReservationForm = ({ bar }: Props) => {
       }
       const payload = { ...values };
       if (!payload.message?.trim()) delete (payload as any).message;
-      await create.mutateAsync(payload);
+      await create.mutateAsync(payload as any);
       const params = new URLSearchParams({
         name: values.name,
         date: values.date,
