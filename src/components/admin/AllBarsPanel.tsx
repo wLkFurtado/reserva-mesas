@@ -160,7 +160,32 @@ export const AllBarsPanel = ({ enabled }: { enabled: boolean }) => {
             <SelectItem value="São Pedro">São Pedro</SelectItem>
           </SelectContent>
         </Select>
-        <Input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="w-auto" />
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className={cn("justify-start text-left font-normal min-w-[180px]", !dateFilter && "text-muted-foreground")}
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {dateFilter ? format(parseLocalDate(dateFilter), "dd/MM/yyyy") : "Selecionar data"}
+              {dateFilter && (
+                <X
+                  className="ml-auto h-4 w-4 opacity-60 hover:opacity-100"
+                  onClick={(e) => { e.stopPropagation(); setDateFilter(""); }}
+                />
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <CalendarComponent
+              mode="single"
+              selected={dateFilter ? parseLocalDate(dateFilter) : undefined}
+              onSelect={(d) => setDateFilter(d ? toLocalISO(d) : "")}
+              initialFocus
+              className="p-3 pointer-events-auto"
+            />
+          </PopoverContent>
+        </Popover>
         <Select value={statusFilter || "all"} onValueChange={(v) => setStatusFilter(v === "all" ? "" : v)}>
           <SelectTrigger className="w-[160px]"><SelectValue placeholder="Status" /></SelectTrigger>
           <SelectContent>
