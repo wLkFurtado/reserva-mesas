@@ -4,6 +4,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -11,9 +12,10 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { CalendarX, Trash2, Download, Plus } from "lucide-react";
+import { CalendarX, Trash2, Download, Plus, List, CalendarDays } from "lucide-react";
 import { AdminBarReservationForm } from "./AdminBarReservationForm";
 import { BarAdminFilters, useBarAdminFilters } from "./BarAdminFilters";
+import { ReservationCalendar } from "./ReservationCalendar";
 import { format } from "date-fns";
 import { parseLocalDate } from "@/lib/date-utils";
 import { toast } from "@/hooks/use-toast";
@@ -54,6 +56,7 @@ export const BarReservationsPanel = ({ bar, showBarLabel, data, loading, hideFil
   const filters = useBarAdminFilters();
   const [confirmDelete, setConfirmDelete] = useState<BarReservation | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [tab, setTab] = useState<"list" | "calendar">("list");
 
   const filtered = useMemo(
     () => reservations.filter(filters.matches),
@@ -110,86 +113,106 @@ export const BarReservationsPanel = ({ bar, showBarLabel, data, loading, hideFil
   return (
     <div className="space-y-4">
       {!hideFilters && (
-        <>
-          <div className="flex justify-end gap-2 flex-wrap">
-            <Button variant="outline" onClick={exportCsv} disabled={filtered.length === 0}>
-              <Download className="w-4 h-4 mr-2" /> CSV
-            </Button>
-            <Button onClick={() => setCreateOpen(true)} className="bg-primary hover:bg-primary/90">
-              <Plus className="w-4 h-4 mr-2" /> Nova Reserva
-            </Button>
-          </div>
-          <BarAdminFilters
-            filters={filters}
-            locais={cfg.locais}
-            onRefresh={() => own.refetch()}
-            resultCount={filtered.length}
-            totalCount={reservations.length}
-          />
-        </>
+        <div className="flex justify-end gap-2 flex-wrap">
+          <Button variant="outline" onClick={exportCsv} disabled={filtered.length === 0}>
+            <Download className="w-4 h-4 mr-2" /> CSV
+          </Button>
+          <Button onClick={() => setCreateOpen(true)} className="bg-primary hover:bg-primary/90">
+            <Plus className="w-4 h-4 mr-2" /> Nova Reserva
+          </Button>
+        </div>
       )}
 
-      {filtered.length === 0 ? (
-        <div className="text-center py-16 bg-muted/30 rounded-lg border border-dashed">
-          <CalendarX className="h-12 w-12 mx-auto text-primary/60 mb-3" />
-          <h3 className="font-semibold mb-1">Nenhuma reserva encontrada</h3>
-          <p className="text-sm text-muted-foreground">Sem resultados para os filtros aplicados.</p>
-        </div>
-      ) : (
-        <div className="rounded-md border overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                {showBarLabel && <TableHead>Bar</TableHead>}
-                <TableHead>Cliente</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead>Local</TableHead>
-                <TableHead>Pessoas</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.map((r) => {
-                const status = (r.status ?? "pending") as BarReservationStatus;
-                const meta = statusMeta[status];
-                return (
-                  <TableRow key={r.id}>
-                    {showBarLabel && <TableCell><Badge variant="outline">{cfg.shortName}</Badge></TableCell>}
-                    <TableCell>
-                      <div className="font-medium">{r.name}</div>
-                      <div className="text-xs text-muted-foreground">{r.email}</div>
-                      <div className="text-xs text-muted-foreground">{r.phone}</div>
-                    </TableCell>
-                    <TableCell>{format(parseLocalDate(r.date), "dd/MM/yyyy")}</TableCell>
-                    <TableCell><Badge variant="outline">{r.local}</Badge></TableCell>
-                    <TableCell>{r.guests}</TableCell>
-                    <TableCell>
-                      <Select value={status} onValueChange={(v) => handleStatus(r.id, v as BarReservationStatus)}>
-                        <SelectTrigger className="h-8 w-[140px]">
-                          <SelectValue><Badge variant={meta.variant}>{meta.label}</Badge></SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pendente</SelectItem>
-                          <SelectItem value="confirmed">Confirmada</SelectItem>
-                          <SelectItem value="cancelled">Cancelada</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => setConfirmDelete(r)} className="hover:text-destructive">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </TableCell>
+      <Tabs value={tab} onValueChange={(v) => setTab(v as any)}>
+        <TabsList>
+          <TabsTrigger value="list" className="gap-2"><List className="h-4 w-4" /> Lista</TabsTrigger>
+          <TabsTrigger value="calendar" className="gap-2"><CalendarDays className="h-4 w-4" /> Calendário</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="list" className="space-y-4 mt-4">
+          {!hideFilters && (
+            <BarAdminFilters
+              filters={filters}
+              locais={cfg.locais}
+              onRefresh={() => own.refetch()}
+              resultCount={filtered.length}
+              totalCount={reservations.length}
+            />
+          )}
+
+          {filtered.length === 0 ? (
+            <div className="text-center py-16 bg-muted/30 rounded-lg border border-dashed">
+              <CalendarX className="h-12 w-12 mx-auto text-primary/60 mb-3" />
+              <h3 className="font-semibold mb-1">Nenhuma reserva encontrada</h3>
+              <p className="text-sm text-muted-foreground">Sem resultados para os filtros aplicados.</p>
+            </div>
+          ) : (
+            <div className="rounded-md border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {showBarLabel && <TableHead>Bar</TableHead>}
+                    <TableHead>Cliente</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Local</TableHead>
+                    <TableHead>Pessoas</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+                </TableHeader>
+                <TableBody>
+                  {filtered.map((r) => {
+                    const status = (r.status ?? "pending") as BarReservationStatus;
+                    const meta = statusMeta[status];
+                    return (
+                      <TableRow key={r.id}>
+                        {showBarLabel && <TableCell><Badge variant="outline">{cfg.shortName}</Badge></TableCell>}
+                        <TableCell>
+                          <div className="font-medium">{r.name}</div>
+                          <div className="text-xs text-muted-foreground">{r.email}</div>
+                          <div className="text-xs text-muted-foreground">{r.phone}</div>
+                        </TableCell>
+                        <TableCell>{format(parseLocalDate(r.date), "dd/MM/yyyy")}</TableCell>
+                        <TableCell><Badge variant="outline">{r.local}</Badge></TableCell>
+                        <TableCell>{r.guests}</TableCell>
+                        <TableCell>
+                          <Select value={status} onValueChange={(v) => handleStatus(r.id, v as BarReservationStatus)}>
+                            <SelectTrigger className="h-8 w-[140px]">
+                              <SelectValue><Badge variant={meta.variant}>{meta.label}</Badge></SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pendente</SelectItem>
+                              <SelectItem value="confirmed">Confirmada</SelectItem>
+                              <SelectItem value="cancelled">Cancelada</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="icon" onClick={() => setConfirmDelete(r)} className="hover:text-destructive">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
 
-      <div className="text-sm text-muted-foreground">{filtered.length} reserva(s)</div>
+          <div className="text-sm text-muted-foreground">{filtered.length} reserva(s)</div>
+        </TabsContent>
+
+        <TabsContent value="calendar" className="mt-4">
+          <ReservationCalendar
+            reservations={reservations}
+            onSelectDate={(iso) => {
+              filters.update({ date: iso, dateMode: "exact" });
+              setTab("list");
+            }}
+          />
+        </TabsContent>
+      </Tabs>
 
       <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
         <AlertDialogContent>
