@@ -5,12 +5,15 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Download, CalendarX } from "lucide-react";
+import { Download, CalendarX, Calendar as CalendarIcon, X } from "lucide-react";
 import { format } from "date-fns";
-import { parseLocalDate } from "@/lib/date-utils";
+import { cn } from "@/lib/utils";
+import { parseLocalDate, toLocalISO } from "@/lib/date-utils";
 import { useReservations, type Reservation } from "@/hooks/useReservations";
 import { useBarReservations, type BarReservation } from "@/hooks/useBarReservations";
 import { BARS } from "@/lib/bars";
