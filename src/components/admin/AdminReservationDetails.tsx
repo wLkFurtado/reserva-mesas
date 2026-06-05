@@ -109,21 +109,28 @@ export const AdminReservationDetails = ({ reservation, onClose, onEdit, onDelete
               <p className="text-xs text-muted-foreground">Carregando histórico...</p>
             ) : logs && logs.length > 0 ? (
               <div className="space-y-2 border-l-2 border-primary/20 pl-4 ml-2">
-                {logs.map((log) => (
-                  <div key={log.id} className="relative">
-                    <div className="absolute -left-[21px] top-1 h-2 w-2 rounded-full bg-primary/50" />
-                    <div className="text-xs text-muted-foreground mb-1">
-                      {format(new Date(log.changed_at), "dd/MM/yyyy HH:mm")}
+                {logs.map((log) => {
+                  const action = log.action ?? (log.old_status ? "status_changed" : "created");
+                  const author = log.changed_by_email || "sistema";
+                  return (
+                    <div key={log.id} className="relative">
+                      <div className="absolute -left-[21px] top-1 h-2 w-2 rounded-full bg-primary/50" />
+                      <div className="text-xs text-muted-foreground mb-1">
+                        {format(new Date(log.changed_at), "dd/MM/yyyy HH:mm")}
+                      </div>
+                      <div className="text-sm">
+                        {action === "deleted" ? (
+                          <>Reserva <strong>excluída</strong></>
+                        ) : action === "created" ? (
+                          <>Criada como <strong>{formatLogStatus(log.new_status)}</strong></>
+                        ) : (
+                          <>Alterado de <strong>{formatLogStatus(log.old_status)}</strong> para <strong>{formatLogStatus(log.new_status)}</strong></>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5">por {author}</div>
                     </div>
-                    <div className="text-sm">
-                      {log.old_status ? (
-                        <>Alterado de <strong>{formatLogStatus(log.old_status)}</strong> para <strong>{formatLogStatus(log.new_status)}</strong></>
-                      ) : (
-                        <>Criada como <strong>{formatLogStatus(log.new_status)}</strong></>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="text-xs text-muted-foreground italic">Nenhuma alteração registrada.</p>
