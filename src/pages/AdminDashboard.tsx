@@ -18,6 +18,7 @@ import { ReservationCalendar } from "@/components/admin/ReservationCalendar";
 import { BarReservationsPanel } from "@/components/admin/BarReservationsPanel";
 import { AllBarsPanel } from "@/components/admin/AllBarsPanel";
 import { useAdminFilters } from "@/hooks/useAdminFilters";
+import { useBarReservations } from "@/hooks/useBarReservations";
 import {
   useReservations,
   useCreateReservation,
