@@ -27,9 +27,13 @@ export interface ReservationLog {
   id: string;
   reservation_id: string;
   old_status: string | null;
-  new_status: string;
+  new_status: string | null;
   note: string | null;
   changed_at: string;
+  action?: "created" | "status_changed" | "deleted" | string | null;
+  bar?: string | null;
+  changed_by?: string | null;
+  changed_by_email?: string | null;
 }
 
 export interface ReservationCapacity {
@@ -204,11 +208,11 @@ export const useReservationLogs = (reservationId: string | null | undefined) => 
     enabled: Boolean(reservationId),
     queryFn: async () => {
       if (!reservationId) return [];
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("reservation_logs")
         .select("*")
         .eq("reservation_id", reservationId)
-        .order("changed_at", { ascending: false });
+        .order("changed_at", { ascending: true });
       
       // If table doesn't exist yet (migration not run), just return empty array instead of failing
       if (error) {

@@ -405,25 +405,37 @@ export type Database = {
       }
       reservation_logs: {
         Row: {
+          action: string
+          bar: string
           changed_at: string
+          changed_by: string | null
+          changed_by_email: string | null
           id: string
-          new_status: string
+          new_status: string | null
           note: string | null
           old_status: string | null
           reservation_id: string
         }
         Insert: {
+          action?: string
+          bar?: string
           changed_at?: string
+          changed_by?: string | null
+          changed_by_email?: string | null
           id?: string
-          new_status: string
+          new_status?: string | null
           note?: string | null
           old_status?: string | null
           reservation_id: string
         }
         Update: {
+          action?: string
+          bar?: string
           changed_at?: string
+          changed_by?: string | null
+          changed_by_email?: string | null
           id?: string
-          new_status?: string
+          new_status?: string | null
           note?: string | null
           old_status?: string | null
           reservation_id?: string
