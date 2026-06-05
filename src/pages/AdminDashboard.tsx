@@ -155,7 +155,7 @@ const AdminDashboard = () => {
         <AdminHeader email={user.email ?? ""} onLogout={handleLogout} />
 
         <AdminStatsCards 
-          reservations={reservations} 
+          reservations={statsReservations} 
           selectedDate={filters.state.dateMode === "exact" && filters.state.date ? filters.state.date : undefined}
         />
 
