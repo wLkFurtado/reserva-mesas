@@ -43,7 +43,6 @@ export const AdminStatsCards = ({ reservations, selectedDate }: Props) => {
       occupancyValue: todayGuests,
       next7Count: next7.length,
       pendingCount: pending.length,
-      estimatedRevenue: todayPeople * 80,
     };
   }, [reservations, selectedDate]);
 
