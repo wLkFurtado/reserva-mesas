@@ -18,6 +18,7 @@ import { ReservationCalendar } from "@/components/admin/ReservationCalendar";
 import { BarReservationsPanel } from "@/components/admin/BarReservationsPanel";
 import { AllBarsPanel } from "@/components/admin/AllBarsPanel";
 import { useAdminFilters } from "@/hooks/useAdminFilters";
+import { useBarReservations } from "@/hooks/useBarReservations";
 import {
   useReservations,
   useCreateReservation,
@@ -42,6 +43,28 @@ const AdminDashboard = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Reservation | null>(null);
   const [viewing, setViewing] = useState<Reservation | null>(null);
+
+  const { data: cabofrioReservations = [] } = useBarReservations("cabofrio", isAuthed);
+  const { data: saopedroReservations = [] } = useBarReservations("saopedro", isAuthed);
+
+  const statsReservations = useMemo(() => {
+    const mapBar = (arr: any[]) => arr.map((r) => ({
+      id: r.id,
+      name: r.name,
+      email: r.email,
+      phone: r.phone,
+      guests: r.guests,
+      date: r.date,
+      periodo: "noite" as const,
+      status: r.status,
+      message: r.message ?? null,
+      created_at: r.created_at,
+    })) as Reservation[];
+    if (bar === "troia") return reservations;
+    if (bar === "cabofrio") return mapBar(cabofrioReservations);
+    if (bar === "saopedro") return mapBar(saopedroReservations);
+    return [...reservations, ...mapBar(cabofrioReservations), ...mapBar(saopedroReservations)];
+  }, [bar, reservations, cabofrioReservations, saopedroReservations]);
 
   const filtered = useMemo(
     () => reservations.filter(filters.matches),
@@ -132,7 +155,7 @@ const AdminDashboard = () => {
         <AdminHeader email={user.email ?? ""} onLogout={handleLogout} />
 
         <AdminStatsCards 
-          reservations={reservations} 
+          reservations={statsReservations} 
           selectedDate={filters.state.dateMode === "exact" && filters.state.date ? filters.state.date : undefined}
         />
 
