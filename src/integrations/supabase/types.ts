@@ -62,6 +62,24 @@ export type Database = {
         }
         Relationships: []
       }
+      configuracoes: {
+        Row: {
+          atualizado_em: string | null
+          chave: string
+          valor: string
+        }
+        Insert: {
+          atualizado_em?: string | null
+          chave: string
+          valor: string
+        }
+        Update: {
+          atualizado_em?: string | null
+          chave?: string
+          valor?: string
+        }
+        Relationships: []
+      }
       ganhadores: {
         Row: {
           anunciado_em: string | null
@@ -702,6 +720,16 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      salvar_palpite_com_codigo: {
+        Args: {
+          p_codigo_presenca: string
+          p_jogo_id: string
+          p_palpite_casa: number
+          p_palpite_visitante: number
+          p_participante_id: string
+        }
+        Returns: Json
       }
     }
     Enums: {
