@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Calendar, Users, Gauge, CalendarRange, Clock, TrendingUp } from "lucide-react";
+import { Calendar, Users, Gauge, CalendarRange, Clock } from "lucide-react";
 import type { Reservation } from "@/hooks/useReservations";
 import { todayLocalISO, parseLocalDate } from "@/lib/date-utils";
 import { useMemo } from "react";
