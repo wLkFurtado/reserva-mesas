@@ -27,9 +27,13 @@ export interface ReservationLog {
   id: string;
   reservation_id: string;
   old_status: string | null;
-  new_status: string;
+  new_status: string | null;
   note: string | null;
   changed_at: string;
+  action?: "created" | "status_changed" | "deleted" | string | null;
+  bar?: string | null;
+  changed_by?: string | null;
+  changed_by_email?: string | null;
 }
 
 export interface ReservationCapacity {
