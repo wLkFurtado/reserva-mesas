@@ -1,0 +1,1 @@
+ALTER TABLE public.reservation_logs DROP CONSTRAINT IF EXISTS reservation_logs_reservation_id_fkey;

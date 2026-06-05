@@ -458,15 +458,7 @@ export type Database = {
           old_status?: string | null
           reservation_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "reservation_logs_reservation_id_fkey"
-            columns: ["reservation_id"]
-            isOneToOne: false
-            referencedRelation: "reservations"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       reservations: {
         Row: {
