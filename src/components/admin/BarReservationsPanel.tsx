@@ -56,6 +56,7 @@ export const BarReservationsPanel = ({ bar, showBarLabel, data, loading, hideFil
   const filters = useBarAdminFilters();
   const [confirmDelete, setConfirmDelete] = useState<BarReservation | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [editing, setEditing] = useState<BarReservation | null>(null);
   const [tab, setTab] = useState<"list" | "calendar">("list");
 
   const filtered = useMemo(
