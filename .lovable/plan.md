@@ -1,58 +1,24 @@
-# Anexar imagem às reservas (admin)
+## Problema
 
-Permitir que admins anexem **uma imagem** por reserva nas 3 unidades (Tróia, Cabo Frio, São Pedro), visível nos detalhes e editável no formulário.
+O upload de imagem falha com **"The database schema is invalid or incompatible"** (HTTP 400, code `DatabaseInvalidObjectDefinition`).
 
-## 1. Banco de dados
+Causa raiz: a função `public.has_role(uuid, app_role)` está **sem `GRANT EXECUTE`** para os roles `anon`/`authenticated`/`service_role`. Como as policies de `storage.objects` (`"Admins can upload reservation images"` e `"Imagens admin insert"`) chamam `has_role(...)`, a avaliação da RLS quebra com *permission denied for function has_role*, e o storage-api converte esse erro em `DatabaseInvalidObjectDefinition`.
 
-Adicionar coluna `image_url text` nas 3 tabelas:
-- `public.reservations`
-- `public.reservations_cabofrio`
-- `public.reservations_saopedro`
+Confirmado por:
+- `information_schema.routine_privileges` para `public.has_role` retornando vazio.
+- Chamadas diretas à função pelo service falham com `42501: permission denied for function has_role`.
 
-Migração simples com `ALTER TABLE ... ADD COLUMN image_url text`.
+## Correção
 
-## 2. Storage
+Rodar uma migração curta restaurando o EXECUTE:
 
-Reaproveitar o bucket existente **`imagens`** (público), usando o prefixo `reservas/{bar}/{reservation_id}-{timestamp}.{ext}`.
+```sql
+GRANT EXECUTE ON FUNCTION public.has_role(uuid, public.app_role)
+  TO anon, authenticated, service_role;
+```
 
-Políticas RLS em `storage.objects` para o prefixo `reservas/`:
-- **SELECT**: público (bucket já é público).
-- **INSERT / UPDATE / DELETE**: somente usuários com role `admin` (via `has_role(auth.uid(), 'admin')`).
+Sem mudanças no frontend — depois disso o upload no formulário de Cabo Frio / São Pedro / Tróia volta a funcionar e o painel admin continua abrindo normalmente (a leitura do role no React já depende dessa mesma função).
 
-## 3. Componente de upload
+## Observação
 
-Novo componente `src/components/admin/ImageUploadField.tsx`:
-- Input file (accept=image/*, máx 5MB, valida tipo).
-- Preview da imagem atual com botão "Remover" e "Trocar".
-- Upload via `supabase.storage.from('imagens').upload(...)`, retorna `publicUrl`.
-- Estado de loading + toasts de erro/sucesso.
-
-## 4. Integração nos formulários admin
-
-- **`AdminReservationForm.tsx`** (Tróia): adicionar campo `image_url` no state e renderizar `<ImageUploadField>`.
-- **`AdminBarReservationForm.tsx`** (Cabo Frio / São Pedro): mesmo tratamento.
-- Ao salvar, persistir `image_url` junto com os demais campos.
-- Ao excluir/trocar imagem, remover o arquivo antigo do storage (best-effort).
-
-## 5. Exibição
-
-- **`AdminReservationDetails.tsx`** (Sheet do Tróia): nova seção "Anexo" com thumbnail clicável que abre em nova aba.
-- Tabelas admin de Cabo Frio/São Pedro: pequeno ícone de clipe (📎) na linha quando houver anexo, abrindo a imagem em lightbox simples (ou nova aba).
-
-## 6. Tipos
-
-Atualizar as interfaces `Reservation` e `BarReservation` nos hooks (`useReservations.ts`, `useBarReservations.ts`) para incluir `image_url?: string | null`.
-
-## Detalhes técnicos
-
-- Validação client-side: tipo MIME (`image/jpeg|png|webp`), tamanho ≤ 5MB.
-- Nome do arquivo: `reservas/{bar}/{uuid}.{ext}` para evitar colisão e facilitar cleanup.
-- Como o bucket é público, qualquer pessoa com o link vê a imagem — se no futuro houver comprovantes sensíveis, migrar para bucket privado com URLs assinadas.
-- `image_url` é nullable, não quebra reservas existentes.
-- Sem impacto nos formulários públicos dos clientes.
-
-## Fora de escopo
-
-- Upload pelo cliente no formulário público.
-- Múltiplas imagens / galeria.
-- Compressão/resize automático (pode entrar depois se necessário).
+Vou deixar uma nota na memória de segurança para que próximas varreduras não removam novamente o `EXECUTE` dessa função — ela é usada por policies de RLS e por código cliente autenticado, então precisa permanecer executável por `authenticated` (e, no caso, `anon` também, pra não quebrar a checagem inicial pré-login).
