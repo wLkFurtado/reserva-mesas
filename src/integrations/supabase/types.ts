@@ -521,6 +521,7 @@ export type Database = {
           email: string
           guests: number
           id: string
+          image_url: string | null
           message: string | null
           name: string
           periodo: string
@@ -533,6 +534,7 @@ export type Database = {
           email: string
           guests: number
           id?: string
+          image_url?: string | null
           message?: string | null
           name: string
           periodo: string
@@ -545,6 +547,7 @@ export type Database = {
           email?: string
           guests?: number
           id?: string
+          image_url?: string | null
           message?: string | null
           name?: string
           periodo?: string
@@ -560,6 +563,7 @@ export type Database = {
           email: string
           guests: number
           id: string
+          image_url: string | null
           local: string
           message: string | null
           name: string
@@ -572,6 +576,7 @@ export type Database = {
           email: string
           guests: number
           id?: string
+          image_url?: string | null
           local: string
           message?: string | null
           name: string
@@ -584,6 +589,7 @@ export type Database = {
           email?: string
           guests?: number
           id?: string
+          image_url?: string | null
           local?: string
           message?: string | null
           name?: string
@@ -599,6 +605,7 @@ export type Database = {
           email: string
           guests: number
           id: string
+          image_url: string | null
           local: string
           message: string | null
           name: string
@@ -611,6 +618,7 @@ export type Database = {
           email: string
           guests: number
           id?: string
+          image_url?: string | null
           local: string
           message?: string | null
           name: string
@@ -623,6 +631,7 @@ export type Database = {
           email?: string
           guests?: number
           id?: string
+          image_url?: string | null
           local?: string
           message?: string | null
           name?: string
