@@ -12,7 +12,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { CalendarX, Trash2, Download, Plus, List, CalendarDays } from "lucide-react";
+import { CalendarX, Trash2, Download, Plus, List, CalendarDays, Pencil } from "lucide-react";
 import { AdminBarReservationForm } from "./AdminBarReservationForm";
 import { BarAdminFilters, useBarAdminFilters } from "./BarAdminFilters";
 import { ReservationCalendar } from "./ReservationCalendar";
