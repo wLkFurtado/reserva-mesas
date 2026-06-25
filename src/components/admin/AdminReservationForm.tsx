@@ -27,6 +27,7 @@ import { maskPhone } from "@/lib/phone-mask";
 import { reservationAdminSchema } from "@/lib/validation";
 import { toast } from "@/hooks/use-toast";
 import type { Reservation, ReservationStatus } from "@/hooks/useReservations";
+import { ImageUploadField } from "./ImageUploadField";
 
 interface FormState {
   name: string;
@@ -37,6 +38,7 @@ interface FormState {
   periodo: string;
   status: ReservationStatus;
   message?: string;
+  image_url?: string | null;
 }
 
 const empty: FormState = {
@@ -48,6 +50,7 @@ const empty: FormState = {
   periodo: "tarde",
   status: "pending",
   message: "",
+  image_url: null,
 };
 
 interface Props {
