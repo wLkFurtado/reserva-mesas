@@ -16,6 +16,7 @@ export interface BarReservation {
   local: string;
   status: BarReservationStatus;
   message?: string | null;
+  image_url?: string | null;
   created_at: string;
 }
 
