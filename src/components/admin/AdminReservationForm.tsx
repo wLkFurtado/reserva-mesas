@@ -182,6 +182,13 @@ export const AdminReservationForm = ({ open, editing, onClose, onSubmit }: Props
               rows={3}
             />
           </div>
+          <div className="md:col-span-2">
+            <ImageUploadField
+              value={data.image_url}
+              onChange={(url) => setData({ ...data, image_url: url })}
+              folder="reservas/troia"
+            />
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} disabled={submitting}>Cancelar</Button>
