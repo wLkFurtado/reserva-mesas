@@ -125,6 +125,30 @@ export type Database = {
           },
         ]
       }
+      gerentes: {
+        Row: {
+          criado_em: string | null
+          id: string
+          nome: string
+          senha: string
+          usuario: string
+        }
+        Insert: {
+          criado_em?: string | null
+          id?: string
+          nome: string
+          senha: string
+          usuario: string
+        }
+        Update: {
+          criado_em?: string | null
+          id?: string
+          nome?: string
+          senha?: string
+          usuario?: string
+        }
+        Relationships: []
+      }
       jogos: {
         Row: {
           bandeira_casa: string | null
@@ -325,6 +349,30 @@ export type Database = {
         }
         Relationships: []
       }
+      logs_admin: {
+        Row: {
+          acao: string
+          admin_email: string
+          criado_em: string | null
+          detalhes: string
+          id: string
+        }
+        Insert: {
+          acao: string
+          admin_email: string
+          criado_em?: string | null
+          detalhes: string
+          id?: string
+        }
+        Update: {
+          acao?: string
+          admin_email?: string
+          criado_em?: string | null
+          detalhes?: string
+          id?: string
+        }
+        Relationships: []
+      }
       n8n_chat_histories: {
         Row: {
           id: number
@@ -393,30 +441,36 @@ export type Database = {
       }
       participantes: {
         Row: {
+          cpf: string | null
           criado_em: string | null
           data_nascimento: string
           email: string
           id: string
           nome: string
           pontos_total: number | null
+          senha: string | null
           telefone: string
         }
         Insert: {
+          cpf?: string | null
           criado_em?: string | null
           data_nascimento: string
           email: string
           id?: string
           nome: string
           pontos_total?: number | null
+          senha?: string | null
           telefone: string
         }
         Update: {
+          cpf?: string | null
           criado_em?: string | null
           data_nascimento?: string
           email?: string
           id?: string
           nome?: string
           pontos_total?: number | null
+          senha?: string | null
           telefone?: string
         }
         Relationships: []
@@ -577,6 +631,45 @@ export type Database = {
         }
         Relationships: []
       }
+      troia_pos_msg_log: {
+        Row: {
+          cpf: string
+          dia: string
+          enviado_em: string
+          id: number
+          nome: string | null
+          primeiro_nome: string | null
+          qtd_transacoes: number | null
+          telefone: string
+          ultima_transacao: string | null
+          valor_centavos: number | null
+        }
+        Insert: {
+          cpf: string
+          dia?: string
+          enviado_em?: string
+          id?: never
+          nome?: string | null
+          primeiro_nome?: string | null
+          qtd_transacoes?: number | null
+          telefone: string
+          ultima_transacao?: string | null
+          valor_centavos?: number | null
+        }
+        Update: {
+          cpf?: string
+          dia?: string
+          enviado_em?: string
+          id?: never
+          nome?: string | null
+          primeiro_nome?: string | null
+          qtd_transacoes?: number | null
+          telefone?: string
+          ultima_transacao?: string | null
+          valor_centavos?: number | null
+        }
+        Relationships: []
+      }
       troia_reservas: {
         Row: {
           criado_em: string | null
@@ -693,6 +786,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cadastrar_participante: {
+        Args: {
+          p_cpf: string
+          p_data_nascimento: string
+          p_email: string
+          p_nome: string
+          p_ref_id: string
+          p_senha: string
+          p_telefone: string
+        }
+        Returns: Json
+      }
+      calcular_distancia: {
+        Args: { lat1: number; lat2: number; lon1: number; lon2: number }
+        Returns: number
+      }
       calcular_pontos_jogo: { Args: { p_jogo_id: string }; Returns: undefined }
       get_reservations_status_by_period: {
         Args: { target_date: string }
@@ -713,16 +822,41 @@ export type Database = {
         }
         Returns: boolean
       }
-      salvar_palpite_com_codigo: {
-        Args: {
-          p_codigo_presenca: string
-          p_jogo_id: string
-          p_palpite_casa: number
-          p_palpite_visitante: number
-          p_participante_id: string
-        }
-        Returns: Json
+      obter_posicao_ranking: { Args: { p_id: string }; Returns: number }
+      ranking_por_rodada: {
+        Args: { p_rodada: string }
+        Returns: {
+          criado_em: string
+          id: string
+          nome: string
+          pontos_rodada: number
+          pontos_total: number
+          posicao: number
+        }[]
       }
+      salvar_palpite_com_codigo:
+        | {
+            Args: {
+              p_codigo_presenca: string
+              p_jogo_id: string
+              p_palpite_casa: number
+              p_palpite_visitante: number
+              p_participante_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_codigo_presenca: string
+              p_jogo_id: string
+              p_lat?: number
+              p_lng?: number
+              p_palpite_casa: number
+              p_palpite_visitante: number
+              p_participante_id: string
+            }
+            Returns: Json
+          }
     }
     Enums: {
       app_role: "admin" | "user"
