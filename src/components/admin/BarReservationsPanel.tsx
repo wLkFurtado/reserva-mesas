@@ -242,6 +242,12 @@ export const BarReservationsPanel = ({ bar, showBarLabel, data, loading, hideFil
       </AlertDialog>
 
       <AdminBarReservationForm bar={bar} open={createOpen} onClose={() => setCreateOpen(false)} />
+      <AdminBarReservationForm
+        bar={bar}
+        open={!!editing}
+        editing={editing}
+        onClose={() => setEditing(null)}
+      />
     </div>
   );
 };
