@@ -58,6 +58,7 @@ export const AdminBarReservationForm = ({ bar, open, onClose, editing }: Props) 
         local: editing.local,
         status: (editing.status ?? "confirmed") as BarReservationStatus,
         message: editing.message ?? "",
+        image_url: editing.image_url ?? null,
       });
     } else {
       setForm(emptyForm());
@@ -76,6 +77,7 @@ export const AdminBarReservationForm = ({ bar, open, onClose, editing }: Props) 
         local: form.local,
         status: form.status,
         message: form.message.trim() || null,
+        image_url: form.image_url ?? null,
       };
       if (isEdit && editing) {
         await update.mutateAsync({ id: editing.id, values });
