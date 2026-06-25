@@ -10,20 +10,28 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { BARS, type BarId } from "@/lib/bars";
-import { useCreateBarReservation, type BarReservationStatus } from "@/hooks/useBarReservations";
+import {
+  useCreateBarReservation,
+  useUpdateBarReservation,
+  type BarReservation,
+  type BarReservationStatus,
+} from "@/hooks/useBarReservations";
 import { toast } from "@/hooks/use-toast";
 
 interface Props {
   bar: BarId;
   open: boolean;
   onClose: () => void;
+  editing?: BarReservation | null;
 }
 
-export const AdminBarReservationForm = ({ bar, open, onClose }: Props) => {
+export const AdminBarReservationForm = ({ bar, open, onClose, editing }: Props) => {
   const cfg = BARS[bar];
   const create = useCreateBarReservation(bar);
+  const update = useUpdateBarReservation(bar);
+  const isEdit = !!editing;
 
-  const [form, setForm] = useState({
+  const emptyForm = () => ({
     name: "",
     email: "",
     phone: "",
@@ -34,16 +42,30 @@ export const AdminBarReservationForm = ({ bar, open, onClose }: Props) => {
     message: "",
   });
 
+  const [form, setForm] = useState(emptyForm());
+
   useEffect(() => {
-    if (open) {
-      setForm((f) => ({ ...f, local: cfg.locais[0] }));
+    if (!open) return;
+    if (editing) {
+      setForm({
+        name: editing.name,
+        email: editing.email,
+        phone: editing.phone,
+        guests: editing.guests,
+        date: editing.date,
+        local: editing.local,
+        status: (editing.status ?? "confirmed") as BarReservationStatus,
+        message: editing.message ?? "",
+      });
+    } else {
+      setForm(emptyForm());
     }
-  }, [open, cfg]);
+  }, [open, editing, cfg]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await create.mutateAsync({
+      const values = {
         name: form.name.trim(),
         email: form.email.trim(),
         phone: form.phone.trim(),
@@ -52,24 +74,29 @@ export const AdminBarReservationForm = ({ bar, open, onClose }: Props) => {
         local: form.local,
         status: form.status,
         message: form.message.trim() || null,
-      });
-      toast({ title: "Reserva criada" });
+      };
+      if (isEdit && editing) {
+        await update.mutateAsync({ id: editing.id, values });
+        toast({ title: "Reserva atualizada" });
+      } else {
+        await create.mutateAsync(values);
+        toast({ title: "Reserva criada" });
+      }
       onClose();
-      setForm({
-        name: "", email: "", phone: "", guests: 2,
-        date: new Date().toISOString().slice(0, 10),
-        local: cfg.locais[0], status: "confirmed", message: "",
-      });
     } catch (e: any) {
       toast({ title: "Erro", description: e?.message ?? "Falha ao salvar", variant: "destructive" });
     }
   };
 
+  const pending = create.isPending || update.isPending;
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>Nova reserva — {cfg.shortName}</DialogTitle>
+          <DialogTitle>
+            {isEdit ? "Editar reserva" : "Nova reserva"} — {cfg.shortName}
+          </DialogTitle>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-3">
           <div>
@@ -122,7 +149,9 @@ export const AdminBarReservationForm = ({ bar, open, onClose }: Props) => {
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
-            <Button type="submit" disabled={create.isPending}>{create.isPending ? "Salvando..." : "Criar reserva"}</Button>
+            <Button type="submit" disabled={pending}>
+              {pending ? "Salvando..." : isEdit ? "Salvar alterações" : "Criar reserva"}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>
