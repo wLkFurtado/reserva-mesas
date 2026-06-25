@@ -75,6 +75,7 @@ export const AdminReservationForm = ({ open, editing, onClose, onSubmit }: Props
         periodo: editing.periodo,
         status: (editing.status ?? "pending") as ReservationStatus,
         message: editing.message || "",
+        image_url: editing.image_url ?? null,
       });
     } else {
       setData(empty);
