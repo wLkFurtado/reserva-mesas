@@ -12,7 +12,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { CalendarX, Trash2, Download, Plus, List, CalendarDays } from "lucide-react";
+import { CalendarX, Trash2, Download, Plus, List, CalendarDays, Pencil } from "lucide-react";
 import { AdminBarReservationForm } from "./AdminBarReservationForm";
 import { BarAdminFilters, useBarAdminFilters } from "./BarAdminFilters";
 import { ReservationCalendar } from "./ReservationCalendar";
@@ -56,6 +56,7 @@ export const BarReservationsPanel = ({ bar, showBarLabel, data, loading, hideFil
   const filters = useBarAdminFilters();
   const [confirmDelete, setConfirmDelete] = useState<BarReservation | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [editing, setEditing] = useState<BarReservation | null>(null);
   const [tab, setTab] = useState<"list" | "calendar">("list");
 
   const filtered = useMemo(
@@ -188,7 +189,10 @@ export const BarReservationsPanel = ({ bar, showBarLabel, data, loading, hideFil
                           </Select>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" onClick={() => setConfirmDelete(r)} className="hover:text-destructive">
+                          <Button variant="ghost" size="icon" onClick={() => setEditing(r)} title="Editar">
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => setConfirmDelete(r)} className="hover:text-destructive" title="Excluir">
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </TableCell>
@@ -238,6 +242,12 @@ export const BarReservationsPanel = ({ bar, showBarLabel, data, loading, hideFil
       </AlertDialog>
 
       <AdminBarReservationForm bar={bar} open={createOpen} onClose={() => setCreateOpen(false)} />
+      <AdminBarReservationForm
+        bar={bar}
+        open={!!editing}
+        editing={editing}
+        onClose={() => setEditing(null)}
+      />
     </div>
   );
 };
