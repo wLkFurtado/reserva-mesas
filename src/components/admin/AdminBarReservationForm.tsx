@@ -41,6 +41,7 @@ export const AdminBarReservationForm = ({ bar, open, onClose, editing }: Props) 
     local: cfg.locais[0],
     status: "confirmed" as BarReservationStatus,
     message: "",
+    image_url: null as string | null,
   });
 
   const [form, setForm] = useState(emptyForm());
