@@ -189,6 +189,17 @@ export const BarReservationsPanel = ({ bar, showBarLabel, data, loading, hideFil
                           </Select>
                         </TableCell>
                         <TableCell className="text-right">
+                          {r.image_url && (
+                            <a
+                              href={r.image_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title="Ver anexo"
+                              className="inline-flex h-8 w-8 items-center justify-center rounded-md text-primary hover:bg-primary/10"
+                            >
+                              <Paperclip className="w-4 h-4" />
+                            </a>
+                          )}
                           <Button variant="ghost" size="icon" onClick={() => setEditing(r)} title="Editar">
                             <Pencil className="w-4 h-4" />
                           </Button>
