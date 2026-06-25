@@ -189,7 +189,10 @@ export const BarReservationsPanel = ({ bar, showBarLabel, data, loading, hideFil
                           </Select>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" onClick={() => setConfirmDelete(r)} className="hover:text-destructive">
+                          <Button variant="ghost" size="icon" onClick={() => setEditing(r)} title="Editar">
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => setConfirmDelete(r)} className="hover:text-destructive" title="Excluir">
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </TableCell>
