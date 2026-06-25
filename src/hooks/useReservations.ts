@@ -20,6 +20,7 @@ export interface Reservation {
   periodo: string;
   status: ReservationStatus;
   message?: string;
+  image_url?: string | null;
   created_at: string;
 }
 

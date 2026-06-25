@@ -17,6 +17,7 @@ import {
   type BarReservationStatus,
 } from "@/hooks/useBarReservations";
 import { toast } from "@/hooks/use-toast";
+import { ImageUploadField } from "./ImageUploadField";
 
 interface Props {
   bar: BarId;
@@ -40,6 +41,7 @@ export const AdminBarReservationForm = ({ bar, open, onClose, editing }: Props) 
     local: cfg.locais[0],
     status: "confirmed" as BarReservationStatus,
     message: "",
+    image_url: null as string | null,
   });
 
   const [form, setForm] = useState(emptyForm());
@@ -56,6 +58,7 @@ export const AdminBarReservationForm = ({ bar, open, onClose, editing }: Props) 
         local: editing.local,
         status: (editing.status ?? "confirmed") as BarReservationStatus,
         message: editing.message ?? "",
+        image_url: editing.image_url ?? null,
       });
     } else {
       setForm(emptyForm());
@@ -74,6 +77,7 @@ export const AdminBarReservationForm = ({ bar, open, onClose, editing }: Props) 
         local: form.local,
         status: form.status,
         message: form.message.trim() || null,
+        image_url: form.image_url ?? null,
       };
       if (isEdit && editing) {
         await update.mutateAsync({ id: editing.id, values });
@@ -147,6 +151,12 @@ export const AdminBarReservationForm = ({ bar, open, onClose, editing }: Props) 
             <Label>Observação</Label>
             <Textarea value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} />
           </div>
+          <ImageUploadField
+            value={form.image_url}
+            onChange={(url) => setForm({ ...form, image_url: url })}
+            folder={`reservas/${bar}`}
+          />
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
             <Button type="submit" disabled={pending}>

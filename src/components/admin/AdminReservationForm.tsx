@@ -27,6 +27,7 @@ import { maskPhone } from "@/lib/phone-mask";
 import { reservationAdminSchema } from "@/lib/validation";
 import { toast } from "@/hooks/use-toast";
 import type { Reservation, ReservationStatus } from "@/hooks/useReservations";
+import { ImageUploadField } from "./ImageUploadField";
 
 interface FormState {
   name: string;
@@ -37,6 +38,7 @@ interface FormState {
   periodo: string;
   status: ReservationStatus;
   message?: string;
+  image_url?: string | null;
 }
 
 const empty: FormState = {
@@ -48,6 +50,7 @@ const empty: FormState = {
   periodo: "tarde",
   status: "pending",
   message: "",
+  image_url: null,
 };
 
 interface Props {
@@ -72,6 +75,7 @@ export const AdminReservationForm = ({ open, editing, onClose, onSubmit }: Props
         periodo: editing.periodo,
         status: (editing.status ?? "pending") as ReservationStatus,
         message: editing.message || "",
+        image_url: editing.image_url ?? null,
       });
     } else {
       setData(empty);
@@ -176,6 +180,13 @@ export const AdminReservationForm = ({ open, editing, onClose, onSubmit }: Props
               placeholder="Ex: Aniversário, alergias, pedido especial..."
               className="mt-1 resize-none"
               rows={3}
+            />
+          </div>
+          <div className="md:col-span-2">
+            <ImageUploadField
+              value={data.image_url}
+              onChange={(url) => setData({ ...data, image_url: url })}
+              folder="reservas/troia"
             />
           </div>
         </div>

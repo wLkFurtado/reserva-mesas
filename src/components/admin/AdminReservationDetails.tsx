@@ -97,11 +97,24 @@ export const AdminReservationDetails = ({ reservation, onClose, onEdit, onDelete
 
           <Separator />
 
+          {r.image_url && (
+            <>
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold">Anexo</h4>
+                <a href={r.image_url} target="_blank" rel="noopener noreferrer" className="block">
+                  <img src={r.image_url} alt="Anexo da reserva" className="w-full max-h-64 object-contain rounded-md border bg-muted/20" />
+                </a>
+              </div>
+              <Separator />
+            </>
+          )}
+
           <div className="text-xs text-muted-foreground">
             Criada em {format(new Date(r.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
           </div>
 
           <Separator />
+
 
           <div className="space-y-3">
             <h4 className="text-sm font-semibold flex items-center gap-2">Histórico de Alterações</h4>
