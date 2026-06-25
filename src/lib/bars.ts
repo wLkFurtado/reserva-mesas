@@ -15,7 +15,7 @@ export const BARS: Record<BarId, BarConfig> = {
     name: "Boteco Seu Osmar — Cabo Frio",
     shortName: "Cabo Frio",
     table: "reservations_cabofrio",
-    locais: ["Área Interna", "Área Externa", "Corredor do Flamengo"],
+    locais: ["Área Interna", "Área Externa", "Corredor do Flamengo", "Área Frontal"],
     publicPath: "/cabofrio",
   },
   saopedro: {
