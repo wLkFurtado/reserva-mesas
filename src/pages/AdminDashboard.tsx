@@ -111,7 +111,8 @@ const AdminDashboard = () => {
           date: values.date,
           periodo: values.periodo,
           status: values.status,
-        });
+          image_url: values.image_url ?? null,
+        } as any);
         toast({ title: "Reserva criada" });
       }
     } catch (e: any) {
