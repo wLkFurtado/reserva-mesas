@@ -17,6 +17,7 @@ import {
   type BarReservationStatus,
 } from "@/hooks/useBarReservations";
 import { toast } from "@/hooks/use-toast";
+import { ImageUploadField } from "./ImageUploadField";
 
 interface Props {
   bar: BarId;
