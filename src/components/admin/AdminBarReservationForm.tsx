@@ -151,6 +151,12 @@ export const AdminBarReservationForm = ({ bar, open, onClose, editing }: Props) 
             <Label>Observação</Label>
             <Textarea value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} />
           </div>
+          <ImageUploadField
+            value={form.image_url}
+            onChange={(url) => setForm({ ...form, image_url: url })}
+            folder={`reservas/${bar}`}
+          />
+
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>Cancelar</Button>
             <Button type="submit" disabled={pending}>
