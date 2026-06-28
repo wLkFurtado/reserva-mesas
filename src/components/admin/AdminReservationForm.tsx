@@ -234,6 +234,46 @@ export const AdminReservationForm = ({ open, editing, onClose, onSubmit }: Props
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Capacidade do dia excedida
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <p>
+                  O dia <strong>{dateObj ? format(dateObj, "dd/MM/yyyy") : ""}</strong> já está com
+                  capacidade máxima.
+                </p>
+                {capacityInfo && (
+                  <div className="rounded-md bg-muted p-3 text-foreground">
+                    <div>Já reservados: <strong>{capacityInfo.booked}</strong></div>
+                    <div>Tentando adicionar: <strong>{capacityInfo.adding}</strong></div>
+                    <div>Capacidade do dia: <strong>{capacityInfo.cap}</strong></div>
+                    <div className="mt-1 text-destructive">
+                      Excesso: <strong>{capacityInfo.booked + capacityInfo.adding - capacityInfo.cap}</strong> lugares
+                    </div>
+                  </div>
+                )}
+                <p>Deseja realmente criar esta reserva mesmo ultrapassando o limite?</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={submitting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={doSubmit}
+              disabled={submitting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Confirmar mesmo assim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 };
