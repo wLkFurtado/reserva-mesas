@@ -130,21 +130,18 @@ export type Database = {
           criado_em: string | null
           id: string
           nome: string
-          senha: string
           usuario: string
         }
         Insert: {
           criado_em?: string | null
           id?: string
           nome: string
-          senha: string
           usuario: string
         }
         Update: {
           criado_em?: string | null
           id?: string
           nome?: string
-          senha?: string
           usuario?: string
         }
         Relationships: []
