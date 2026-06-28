@@ -27,7 +27,19 @@ import { maskPhone } from "@/lib/phone-mask";
 import { reservationAdminSchema } from "@/lib/validation";
 import { toast } from "@/hooks/use-toast";
 import type { Reservation, ReservationStatus } from "@/hooks/useReservations";
+import { useReservationStatusByPeriod } from "@/hooks/useReservations";
 import { ImageUploadField } from "./ImageUploadField";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { AlertTriangle } from "lucide-react";
 
 interface FormState {
   name: string;
