@@ -27,7 +27,19 @@ import { maskPhone } from "@/lib/phone-mask";
 import { reservationAdminSchema } from "@/lib/validation";
 import { toast } from "@/hooks/use-toast";
 import type { Reservation, ReservationStatus } from "@/hooks/useReservations";
+import { useReservationStatusByPeriod } from "@/hooks/useReservations";
 import { ImageUploadField } from "./ImageUploadField";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { AlertTriangle } from "lucide-react";
 
 interface FormState {
   name: string;
@@ -63,6 +75,10 @@ interface Props {
 export const AdminReservationForm = ({ open, editing, onClose, onSubmit }: Props) => {
   const [data, setData] = useState<FormState>(empty);
   const [submitting, setSubmitting] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [capacityInfo, setCapacityInfo] = useState<{ booked: number; cap: number; adding: number } | null>(null);
+
+  const { data: status } = useReservationStatusByPeriod(data.date || null);
 
   useEffect(() => {
     if (editing) {
@@ -86,25 +102,46 @@ export const AdminReservationForm = ({ open, editing, onClose, onSubmit }: Props
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
+  const doSubmit = async () => {
+    setSubmitting(true);
+    const payload = { ...data };
+    if (!payload.message || payload.message.trim() === "") {
+      delete payload.message;
+    }
+    try {
+      await onSubmit(payload, editing?.id);
+      onClose();
+    } finally {
+      setSubmitting(false);
+      setConfirmOpen(false);
+    }
+  };
+
   const handleSave = async () => {
     const result = reservationAdminSchema.safeParse(data);
     if (!result.success) {
       toast({ title: result.error.issues[0]?.message ?? "Dados inválidos", variant: "destructive" });
       return;
     }
-    setSubmitting(true);
-    
-    const payload = { ...data };
-    if (!payload.message || payload.message.trim() === "") {
-      delete payload.message;
+
+    // Checa capacidade (ignora se editando a mesma reserva sem mudar guests/data)
+    if (status && data.status !== "cancelled") {
+      const alreadyCounted = editing && editing.date === data.date && editing.status !== "cancelled"
+        ? editing.guests
+        : 0;
+      const projected = status.total.booked - alreadyCounted + data.guests;
+      if (projected > status.capacity) {
+        setCapacityInfo({
+          booked: status.total.booked - alreadyCounted,
+          cap: status.capacity,
+          adding: data.guests,
+        });
+        setConfirmOpen(true);
+        return;
+      }
     }
 
-    try {
-      await onSubmit(payload, editing?.id);
-      onClose();
-    } finally {
-      setSubmitting(false);
-    }
+    await doSubmit();
   };
 
   return (
@@ -197,6 +234,46 @@ export const AdminReservationForm = ({ open, editing, onClose, onSubmit }: Props
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Capacidade do dia excedida
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <p>
+                  O dia <strong>{dateObj ? format(dateObj, "dd/MM/yyyy") : ""}</strong> já está com
+                  capacidade máxima.
+                </p>
+                {capacityInfo && (
+                  <div className="rounded-md bg-muted p-3 text-foreground">
+                    <div>Já reservados: <strong>{capacityInfo.booked}</strong></div>
+                    <div>Tentando adicionar: <strong>{capacityInfo.adding}</strong></div>
+                    <div>Capacidade do dia: <strong>{capacityInfo.cap}</strong></div>
+                    <div className="mt-1 text-destructive">
+                      Excesso: <strong>{capacityInfo.booked + capacityInfo.adding - capacityInfo.cap}</strong> lugares
+                    </div>
+                  </div>
+                )}
+                <p>Deseja realmente criar esta reserva mesmo ultrapassando o limite?</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={submitting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={doSubmit}
+              disabled={submitting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Confirmar mesmo assim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 };
