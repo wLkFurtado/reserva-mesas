@@ -7,6 +7,7 @@ export interface BarConfig {
   table: "reservations_cabofrio" | "reservations_saopedro";
   locais: string[];
   publicPath: string;
+  capacity: number;
 }
 
 export const BARS: Record<BarId, BarConfig> = {
@@ -17,6 +18,7 @@ export const BARS: Record<BarId, BarConfig> = {
     table: "reservations_cabofrio",
     locais: ["Área Interna", "Área Externa", "Corredor do Flamengo", "Área Frontal"],
     publicPath: "/cabofrio",
+    capacity: 110,
   },
   saopedro: {
     id: "saopedro",
@@ -25,5 +27,6 @@ export const BARS: Record<BarId, BarConfig> = {
     table: "reservations_saopedro",
     locais: ["Ao lado do Bar de Drinks", "Área Frontal", "Em frente à Área Kids"],
     publicPath: "/saopedro",
+    capacity: 110,
   },
 };
