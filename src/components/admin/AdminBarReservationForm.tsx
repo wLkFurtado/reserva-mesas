@@ -9,10 +9,22 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { AlertTriangle } from "lucide-react";
 import { BARS, type BarId } from "@/lib/bars";
 import {
   useCreateBarReservation,
   useUpdateBarReservation,
+  useBarDayBooked,
   type BarReservation,
   type BarReservationStatus,
 } from "@/hooks/useBarReservations";
@@ -45,6 +57,10 @@ export const AdminBarReservationForm = ({ bar, open, onClose, editing }: Props) 
   });
 
   const [form, setForm] = useState(emptyForm());
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [capacityInfo, setCapacityInfo] = useState<{ booked: number; cap: number; adding: number } | null>(null);
+
+  const { data: booked = 0 } = useBarDayBooked(bar, form.date);
 
   useEffect(() => {
     if (!open) return;
@@ -65,8 +81,7 @@ export const AdminBarReservationForm = ({ bar, open, onClose, editing }: Props) 
     }
   }, [open, editing, cfg]);
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const persist = async () => {
     try {
       const values = {
         name: form.name.trim(),
@@ -86,10 +101,28 @@ export const AdminBarReservationForm = ({ bar, open, onClose, editing }: Props) 
         await create.mutateAsync(values);
         toast({ title: "Reserva criada" });
       }
+      setConfirmOpen(false);
       onClose();
     } catch (e: any) {
       toast({ title: "Erro", description: e?.message ?? "Falha ao salvar", variant: "destructive" });
     }
+  };
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (form.status !== "cancelled") {
+      const alreadyCounted = editing && editing.date === form.date && editing.status !== "cancelled"
+        ? editing.guests
+        : 0;
+      const adding = Number(form.guests) || 0;
+      const projected = booked - alreadyCounted + adding;
+      if (projected > cfg.capacity) {
+        setCapacityInfo({ booked: booked - alreadyCounted, cap: cfg.capacity, adding });
+        setConfirmOpen(true);
+        return;
+      }
+    }
+    await persist();
   };
 
   const pending = create.isPending || update.isPending;
@@ -165,6 +198,45 @@ export const AdminBarReservationForm = ({ bar, open, onClose, editing }: Props) 
           </DialogFooter>
         </form>
       </DialogContent>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Capacidade do dia excedida
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <p>
+                  O dia <strong>{form.date}</strong> em <strong>{cfg.shortName}</strong> já está com capacidade máxima.
+                </p>
+                {capacityInfo && (
+                  <div className="rounded-md bg-muted p-3 text-foreground">
+                    <div>Já reservados: <strong>{capacityInfo.booked}</strong></div>
+                    <div>Tentando adicionar: <strong>{capacityInfo.adding}</strong></div>
+                    <div>Capacidade do dia: <strong>{capacityInfo.cap}</strong></div>
+                    <div className="mt-1 text-destructive">
+                      Excesso: <strong>{capacityInfo.booked + capacityInfo.adding - capacityInfo.cap}</strong> lugares
+                    </div>
+                  </div>
+                )}
+                <p>Deseja realmente criar esta reserva mesmo ultrapassando o limite?</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={pending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={persist}
+              disabled={pending}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Confirmar mesmo assim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 };

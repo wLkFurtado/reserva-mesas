@@ -73,6 +73,25 @@ export const useBarReservations = (bar: BarId, enabled: boolean) => {
   return query;
 };
 
+export const useBarDayBooked = (bar: BarId, date: string | null | undefined) => {
+  const table = BARS[bar].table;
+  return useQuery<number>({
+    queryKey: ["bar-day-booked", bar, date],
+    enabled: Boolean(date),
+    queryFn: async () => {
+      if (!date) return 0;
+      const { data, error } = await (supabase as any)
+        .from(table)
+        .select("guests,status")
+        .eq("date", date);
+      if (error) throw error;
+      return ((data as any[]) ?? [])
+        .filter((r) => r.status !== "cancelled")
+        .reduce((sum, r) => sum + (Number(r.guests) || 0), 0);
+    },
+  });
+};
+
 export const useCreateBarReservation = (bar: BarId) => {
   const qc = useQueryClient();
   const table = BARS[bar].table;
