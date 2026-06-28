@@ -812,6 +812,10 @@ export type Database = {
         Returns: number
       }
       calcular_pontos_jogo: { Args: { p_jogo_id: string }; Returns: undefined }
+      can_manage_reservation_image: {
+        Args: { _bucket_id: string; _name: string }
+        Returns: boolean
+      }
       get_reservations_status_by_period: {
         Args: { target_date: string }
         Returns: {
@@ -866,6 +870,7 @@ export type Database = {
             }
             Returns: Json
           }
+      validar_senha_garcom: { Args: { p_senha: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "user"
